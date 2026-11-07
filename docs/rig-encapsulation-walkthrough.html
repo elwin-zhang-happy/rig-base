@@ -1,0 +1,631 @@
+<title>Rig 封装解剖</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --surface-2:#ecefec; --fg:#141917; --muted:#5b6763;
+  --line:#d5dbd7; --accent:#9a5300; --accent-soft:#f2e3cf; --stable:#0c655e; --stable-soft:#d8ebe8;
+  --code-bg:#eef1ee; --code-fg:#1d2422;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,"Cascadia Code",monospace;
+  --measure:68ch;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1413; --surface:#161c1b; --surface-2:#1c2422; --fg:#e7ecea; --muted:#9baaa6;
+    --line:#2a3533; --accent:#e2a761; --accent-soft:#342619; --stable:#6cc8bd; --stable-soft:#16302d;
+    --code-bg:#1b2321; --code-fg:#dfe7e4; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1413; --surface:#161c1b; --surface-2:#1c2422; --fg:#e7ecea; --muted:#9baaa6;
+  --line:#2a3533; --accent:#e2a761; --accent-soft:#342619; --stable:#6cc8bd; --stable-soft:#16302d;
+  --code-bg:#1b2321; --code-fg:#dfe7e4; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); font-size:16px; line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1120px;margin:0 auto;padding-block:56px 96px}
+.eyebrow{font:500 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(32px,5vw,46px);line-height:1.15;margin:.35em 0 .3em;text-wrap:balance;letter-spacing:.01em}
+.deck{font-size:18px;line-height:1.8;color:var(--muted);max-width:var(--measure);margin:0 0 2em}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(22px,3vw,28px);line-height:1.3;margin:0 0 .6em;text-wrap:balance}
+h3{font-size:17px;font-weight:600;line-height:1.5;margin:1.8em 0 .5em}
+p,ul,ol{max-width:var(--measure)}
+p{margin:0 0 1em}
+li{margin:0 0 .4em}
+a{color:var(--stable);text-underline-offset:3px}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);color:var(--code-fg);padding:.12em .38em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0 0 .6em;font-size:13px;line-height:1.65}
+pre code{background:none;padding:0;font-size:inherit}
+.src{font-size:12px;color:var(--muted);margin:0 0 1.6em}
+figure{margin:0 0 1.8em;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 16px 0;overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;min-width:660px}
+figcaption{font-size:13px;line-height:1.65;color:var(--muted);padding:12px 2px 14px;border-top:1px solid var(--line);margin-top:14px}
+.table-wrap{overflow-x:auto;margin:0 0 1.8em}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px;line-height:1.6}
+th{text-align:left;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:8px 14px 8px 0;vertical-align:bottom}
+td{border-bottom:1px solid var(--line);padding:11px 14px 11px 0;vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+td code{white-space:nowrap}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 1.8em;max-width:var(--measure)}
+.note.stable{border-left-color:var(--stable);background:var(--stable-soft)}
+.note p:last-child{margin-bottom:0}
+.toc{display:flex;flex-wrap:wrap;gap:6px 20px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 0 8px;font-size:14px}
+.toc a{color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--fg);text-decoration:underline}
+section{margin-top:60px}
+.rule{border:0;border-top:1px solid var(--line);margin:52px 0 0}
+.dg text{font-family:var(--sans);fill:var(--fg)}
+.dg .t-sm{font-size:12px;fill:var(--muted)}
+.dg .t-xs{font-size:10.5px;fill:var(--muted)}
+.dg .t-mono{font-family:var(--mono);font-size:11.5px;fill:var(--fg)}
+.dg .t-mono-sm{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.dg .neutral{fill:var(--surface-2);stroke:var(--line);stroke-width:1.2}
+.dg .data{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+.dg .type{fill:var(--stable-soft);stroke:var(--stable);stroke-width:1.2}
+.dg .plain{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.dg .line{stroke:var(--muted);stroke-width:1.2;fill:none}
+.dg .dashed{stroke:var(--muted);stroke-width:1.1;fill:none;stroke-dasharray:5 4}
+.dg .mark{fill:var(--accent);stroke:none}
+.dg .mark-t{fill:#fff;font-family:var(--mono);font-size:9px;font-weight:600}
+@media (prefers-color-scheme: dark){
+  .dg .mark-t{fill:#1a130b}
+}
+@media (max-width:640px){
+  body{font-size:15px}
+  .page{padding-block:36px 72px}
+  figure{padding:12px 10px 0}
+}
+</style>
+
+<div class="page">
+<header>
+  <div class="eyebrow">Encapsulation walkthrough · rig 0.46</div>
+  <h1>Rig 封装解剖</h1>
+  <p class="deck">用一条具体请求贯穿四件事：它怎么走完一次 agent 调用，各家 API 的差异被收在哪里，哪些被归一化成公共部分，以及这些部分各自靠什么测试证明自己没有漂移。</p>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#flow">1 完整调用流程</a>
+  <a href="#providers">2 厂商差异与共同点</a>
+  <a href="#seams">3 公共与可变的切分</a>
+  <a href="#tests">4 功能测试拆分</a>
+  <a href="#demo">5 封装演示</a>
+  <a href="#extract">6 可抄走的抽象</a>
+</nav>
+
+<section id="flow">
+  <h2>1 一次 agent 调用的完整流程</h2>
+  <p>假设用户说「修掉 README 里的 TODO」，模型需要先读文件、再改文件。这一条请求会走两次模型调用和两次工具调用。Rig 里同一条请求有两条执行路径，取决于你用哪一层。</p>
+
+  <h3>1.1 库路径：<code>rig-agent</code> 的 run 循环</h3>
+  <p>构造和执行是分开的。<code>AgentBuilder</code> 产出不可变的 <code>Agent</code>；每次 <code>prompt</code> 产出一个 <code>AgentRunner</code>，它再驱动一个纯状态机 <code>AgentRun</code>。状态机只决定下一步做什么，IO 由驱动层完成。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 520" role="img" aria-label="agent run 循环：状态机给出下一步，驱动层执行模型调用和工具调用，钩子在六个位置介入">
+      <defs>
+        <marker id="f1-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="neutral" x="60" y="36" width="230" height="46" rx="8"/>
+        <text x="175" y="64" class="t-mono" text-anchor="middle">AgentBuilder → Agent</text>
+      </g>
+      <line class="line" x1="175" y1="82" x2="175" y2="98" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="neutral" x="60" y="104" width="230" height="46" rx="8"/>
+        <text x="175" y="132" class="t-mono" text-anchor="middle">AgentRunner（一次 run）</text>
+      </g>
+      <line class="line" x1="175" y1="150" x2="175" y2="166" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="type" x="60" y="172" width="230" height="46" rx="8"/>
+        <text x="175" y="200" class="t-mono" text-anchor="middle">AgentRun（sans-I/O）</text>
+      </g>
+
+      <line class="line" x1="290" y1="195" x2="352" y2="195" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="plain" x="360" y="172" width="250" height="46" rx="8"/>
+        <text x="485" y="200" class="t-mono" text-anchor="middle">next_step → CallModel</text>
+      </g>
+
+      <line class="line" x1="485" y1="218" x2="485" y2="240" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="data" x="360" y="246" width="250" height="64" rx="8"/>
+        <text x="485" y="272" class="t-mono" text-anchor="middle">Provider 调用</text>
+        <text x="485" y="294" class="t-sm" text-anchor="middle">prepare → encode → send → decode → fold</text>
+      </g>
+
+      <line class="line" x1="485" y1="310" x2="485" y2="330" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="type" x="360" y="336" width="250" height="52" rx="8"/>
+        <text x="485" y="359" class="t-sm" text-anchor="middle">这一轮有工具调用吗？</text>
+        <text x="485" y="377" class="t-xs" text-anchor="middle">有：CallTools　没有：Done</text>
+      </g>
+
+      <line class="line" x1="610" y1="362" x2="652" y2="362" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="plain" x="660" y="336" width="200" height="52" rx="8"/>
+        <text x="760" y="359" class="t-mono" text-anchor="middle">CallTools</text>
+        <text x="760" y="377" class="t-xs" text-anchor="middle">按顺序或并行执行</text>
+      </g>
+
+      <path class="line" d="M860 362 L880 362 L880 150 L560 150 L560 166" marker-end="url(#f1-arrow)"/>
+      <text x="700" y="142" class="t-xs" text-anchor="middle">工具结果回填后发起下一轮</text>
+
+      <line class="line" x1="485" y1="388" x2="485" y2="424" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="data" x="360" y="430" width="250" height="52" rx="8"/>
+        <text x="485" y="453" class="t-mono" text-anchor="middle">Done(PromptResponse)</text>
+        <text x="485" y="471" class="t-xs" text-anchor="middle">输出、用量、每次调用的记录</text>
+      </g>
+
+      <circle class="mark" cx="352" cy="195" r="9"/>
+      <text class="mark-t" x="352" y="198" text-anchor="middle">1</text>
+      <circle class="mark" cx="360" cy="256" r="9"/>
+      <text class="mark-t" x="360" y="259" text-anchor="middle">2</text>
+      <circle class="mark" cx="600" cy="256" r="9"/>
+      <text class="mark-t" x="600" y="259" text-anchor="middle">3</text>
+      <circle class="mark" cx="600" cy="340" r="9"/>
+      <text class="mark-t" x="600" y="343" text-anchor="middle">4</text>
+      <circle class="mark" cx="650" cy="388" r="9"/>
+      <text class="mark-t" x="650" y="391" text-anchor="middle">5</text>
+      <circle class="mark" cx="600" cy="456" r="9"/>
+      <text class="mark-t" x="600" y="459" text-anchor="middle">6</text>
+    </svg>
+    <figcaption>状态机只产出三种步骤：<code>CallModel { prompt, history, turn }</code>、<code>CallTools { calls }</code>、<code>Done(PromptResponse)</code>。驱动层把模型调用和工具执行做完，再把结果喂回状态机。六个编号是钩子的介入位置，见下表。</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>编号</th><th>钩子</th><th>在哪一步</th><th>能做什么</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>on_run_start</code></td><td>第一次模型调用前</td><td>改写提示词，或在发出任何请求前终止</td></tr>
+        <tr><td>2</td><td><code>on_model_select</code></td><td>每次 <code>CallModel</code> 前</td><td>在已构造的模型之间选择；不能做阻塞 IO</td></tr>
+        <tr><td>3</td><td><code>on_completion_call</code></td><td>请求编码前</td><td>返回请求补丁，或终止</td></tr>
+        <tr><td>4</td><td><code>on_model_turn_finished</code></td><td>模型回合结束后</td><td>接受、重试（无工具回合）、终止</td></tr>
+        <tr><td>5</td><td><code>on_dispatch</code> / <code>on_outcome</code></td><td>工具调用前后</td><td>观察、改参数、拒绝、改写结果</td></tr>
+        <tr><td>6</td><td><code>on_run_settled</code></td><td>结束后</td><td>只观察，不能再调度工作</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>1.2 内核路径：<code>rig-ecs</code> 的实体与阶段</h3>
+  <p>同一条请求在 ECS 里不是一个循环，而是一组实体：消息、回合、模型调用、工具调用各自是实体，每个实体在固定阶段里推进。你可以在任意阶段插一个普通 system 去观察、拦截或改写。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 420" role="img" aria-label="ECS 路径：消息生成回合，回合的模型调用和工具调用是 effect 实体，结果回填后发起下一轮">
+      <defs>
+        <marker id="f2-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="plain" x="20" y="84" width="140" height="64" rx="8"/>
+        <text x="90" y="111" class="t-sm" text-anchor="middle">用户消息</text>
+        <text x="90" y="129" class="t-mono-sm" text-anchor="middle">Deliver</text>
+      </g>
+      <line class="line" x1="160" y1="116" x2="182" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="plain" x="190" y="84" width="140" height="64" rx="8"/>
+        <text x="260" y="111" class="t-sm" text-anchor="middle">回合实体</text>
+        <text x="260" y="129" class="t-mono-sm" text-anchor="middle">TurnOf(agent)</text>
+      </g>
+      <line class="line" x1="330" y1="116" x2="352" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="type" x="360" y="84" width="170" height="64" rx="8"/>
+        <text x="445" y="111" class="t-mono" text-anchor="middle">TurnCall</text>
+        <text x="445" y="129" class="t-xs" text-anchor="middle">模型调用 effect</text>
+      </g>
+      <line class="line" x1="530" y1="116" x2="552" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="data" x="560" y="84" width="150" height="64" rx="8"/>
+        <text x="635" y="111" class="t-mono" text-anchor="middle">Provider</text>
+        <text x="635" y="129" class="t-xs" text-anchor="middle">同一条编解码管线</text>
+      </g>
+      <line class="line" x1="710" y1="116" x2="732" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="plain" x="740" y="84" width="140" height="64" rx="8"/>
+        <text x="810" y="111" class="t-sm" text-anchor="middle">工具调用</text>
+        <text x="810" y="129" class="t-mono-sm" text-anchor="middle">ToolRequest</text>
+      </g>
+
+      <text x="445" y="166" class="t-xs" text-anchor="middle">Admit → Prepare → Gate → Start</text>
+      <text x="810" y="166" class="t-xs" text-anchor="middle">Footprint 决定并行或等待</text>
+
+      <path class="line" d="M810 84 L810 42 L445 42 L445 76" marker-end="url(#f2-arrow)"/>
+      <text x="627" y="34" class="t-xs" text-anchor="middle">结果按调用顺序回填，发起下一轮</text>
+
+      <line class="line" x1="445" y1="178" x2="445" y2="238" marker-end="url(#f2-arrow)"/>
+      <text x="455" y="196" class="t-xs">没有工具调用</text>
+
+      <g>
+        <rect class="data" x="360" y="246" width="170" height="56" rx="8"/>
+        <text x="445" y="270" class="t-mono" text-anchor="middle">TurnOutcome</text>
+        <text x="445" y="288" class="t-xs" text-anchor="middle">提案在回合上</text>
+      </g>
+      <line class="line" x1="530" y1="274" x2="552" y2="274" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="plain" x="560" y="246" width="150" height="56" rx="8"/>
+        <text x="635" y="270" class="t-mono" text-anchor="middle">SessionLog</text>
+        <text x="635" y="288" class="t-xs" text-anchor="middle">会话变更</text>
+      </g>
+      <line class="line" x1="710" y1="274" x2="732" y2="274" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="neutral" x="740" y="246" width="140" height="56" rx="8"/>
+        <text x="810" y="270" class="t-mono" text-anchor="middle">Store</text>
+        <text x="810" y="288" class="t-xs" text-anchor="middle">可恢复</text>
+      </g>
+
+      <text x="20" y="360" class="t-sm">失败路径：Arrive 给重试判定 → Review 可改或执行 → Commit 退避重试或结束回合。</text>
+      <text x="20" y="386" class="t-sm">任何插件都可以在自己的阶段用普通 system 介入，不需要改内核。</text>
+    </svg>
+    <figcaption>ECS 路径把「回合」显式化成实体，于是并发工具、单步重试、中途审批、会话恢复都变成对实体的操作，而不是对循环的补丁。库路径把同样的语义压进一个状态机，换取可序列化和可移植。</figcaption>
+  </figure>
+
+  <h3>1.3 一次模型调用的内部</h3>
+  <p>两条路径最终都落到同一个函数：<code>Operation::prepare</code> 校验请求，<code>Wire::encode</code> 编出请求体，<code>Transport::send</code> 发出去，<code>Decoder</code> 把帧解成事件，<code>Fold</code> 把事件和结束折叠成归一化响应。这条管线在前一份《Rig 设计拆解》里有逐段展开，这里只需要记住：<strong>厂商语法只出现在 encode 和 decode 两步，前后都是归一化的。</strong></p>
+</section>
+
+<section id="providers">
+  <h2>2 厂商接口的差异与共同点</h2>
+  <p>Rig 不按「厂商」组织代码，而按「协议家族」组织。注册表里只有三个家族：OpenAI（Chat Completions 与 Responses）、Anthropic（Messages）、Gemini（GenerateContent）。其余厂商要么是这三个家族的方言，要么是自带 wire 的特例（Bedrock Converse、Cohere 原生、Ollama 原生）。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 470" role="img" aria-label="三个协议家族共享底部归一化语义，各自有不同的方言和传输">
+      <defs>
+        <marker id="f3-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <rect class="neutral" x="140" y="20" width="620" height="38" rx="8"/>
+      <text x="450" y="44" class="t-sm" text-anchor="middle">自带 wire 的特例：Bedrock Converse · Cohere 原生 · Ollama 原生</text>
+
+      <g>
+        <rect class="data" x="40" y="96" width="250" height="96" rx="10"/>
+        <text x="165" y="124" class="t-mono" text-anchor="middle">OpenAI 家族</text>
+        <text x="165" y="148" class="t-sm" text-anchor="middle">Chat Completions / Responses</text>
+        <text x="165" y="169" class="t-xs" text-anchor="middle">Azure · DeepSeek · Groq · xAI</text>
+        <text x="165" y="184" class="t-xs" text-anchor="middle">Ollama · llama.cpp · OpenRouter …</text>
+      </g>
+      <g>
+        <rect class="data" x="325" y="96" width="250" height="96" rx="10"/>
+        <text x="450" y="124" class="t-mono" text-anchor="middle">Anthropic 家族</text>
+        <text x="450" y="148" class="t-sm" text-anchor="middle">Messages</text>
+        <text x="450" y="169" class="t-xs" text-anchor="middle">Z.ai · MiniMax · Moonshot</text>
+        <text x="450" y="184" class="t-xs" text-anchor="middle">小米 MiMo · Ollama …</text>
+      </g>
+      <g>
+        <rect class="data" x="610" y="96" width="250" height="96" rx="10"/>
+        <text x="735" y="124" class="t-mono" text-anchor="middle">Gemini 家族</text>
+        <text x="735" y="148" class="t-sm" text-anchor="middle">GenerateContent</text>
+        <text x="735" y="169" class="t-xs" text-anchor="middle">REST JSON 是规范形态</text>
+        <text x="735" y="184" class="t-xs" text-anchor="middle">Vertex AI 与 gRPC 转码同一份请求</text>
+      </g>
+
+      <line class="line" x1="165" y1="192" x2="330" y2="300" marker-end="url(#f3-arrow)"/>
+      <line class="line" x1="450" y1="192" x2="450" y2="300" marker-end="url(#f3-arrow)"/>
+      <line class="line" x1="735" y1="192" x2="570" y2="300" marker-end="url(#f3-arrow)"/>
+      <text x="195" y="254" class="t-xs" text-anchor="middle">encode ↓ / decode ↑</text>
+      <text x="432" y="254" class="t-xs" text-anchor="end">encode ↓</text>
+      <text x="468" y="274" class="t-xs" text-anchor="start">decode ↑</text>
+      <text x="705" y="254" class="t-xs" text-anchor="middle">encode ↓ / decode ↑</text>
+
+      <rect class="type" x="220" y="306" width="460" height="72" rx="10"/>
+      <text x="450" y="334" class="t-mono" text-anchor="middle">归一化语义</text>
+      <text x="450" y="358" class="t-sm" text-anchor="middle">Message · ToolCall / Result · Usage · FinishReason · StreamEvent · Error</text>
+
+      <rect class="plain" x="220" y="404" width="460" height="46" rx="8"/>
+      <text x="450" y="432" class="t-sm" text-anchor="middle">Transport：HTTP / SSE / AWS event stream / 本地运行时</text>
+    </svg>
+    <figcaption>三个家族共享的不是线上格式，而是语义：谁是消息、谁是工具调用、用量怎么算、什么时候结束、错误怎么分类。语法差异全部下沉到各家族的 wire 里，方言再下沉到数据表。</figcaption>
+  </figure>
+
+  <h3>2.1 同一件事，三种线上写法</h3>
+  <p>下面只保留形状，字段有省略。它们的共同点是都能表达「用户说一句话，模型可能调用一个工具」，不同点是每一层都换了名字和容器。</p>
+
+<pre><code>// OpenAI Chat Completions
+{"model":"gpt-5.2",
+ "messages":[{"role":"system","content":"…"},{"role":"user","content":"修掉 README 里的 TODO"}],
+ "tools":[{"type":"function","function":{"name":"read","parameters":{…}}}]}
+
+// Anthropic Messages
+{"model":"claude-opus-5-5",
+ "system":"…",
+ "messages":[{"role":"user","content":[{"type":"text","text":"修掉 README 里的 TODO"}]}],
+ "max_tokens":8192,
+ "tools":[{"name":"read","input_schema":{…}}]}
+
+// Gemini GenerateContent
+{"contents":[{"role":"user","parts":[{"text":"修掉 README 里的 TODO"}]}],
+ "systemInstruction":{"parts":[{"text":"…"}]},
+ "tools":[{"functionDeclarations":[{"name":"read","parameters":{…}}]}]}</code></pre>
+
+  <h3>2.2 差异清单，以及 Rig 把它收在哪</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>维度</th><th>OpenAI 家族</th><th>Anthropic 家族</th><th>Gemini</th><th>Rig 的归一化</th></tr></thead>
+      <tbody>
+        <tr><td>鉴权</td><td><code>Authorization: Bearer</code>；Azure 用 <code>api-key</code></td><td><code>x-api-key</code></td><td>key 放在 URL 或请求头</td><td><code>Auth</code> 枚举与方言常量</td></tr>
+        <tr><td>地址</td><td>路径固定，模型在请求体</td><td>路径固定，模型在请求体</td><td>模型在路径里</td><td><code>Quirks</code> 的路径字段与 <code>model_is_modality_path</code></td></tr>
+        <tr><td>system 位置</td><td>消息数组里的 <code>role:system</code></td><td>顶层 <code>system</code> 字段</td><td><code>systemInstruction</code></td><td>请求整形时按方言放置</td></tr>
+        <tr><td>消息体</td><td><code>content</code> 字符串或分片</td><td><code>content</code> 块数组</td><td><code>contents</code> 与 <code>parts</code></td><td><code>Message</code>/<code>AssistantContent</code></td></tr>
+        <tr><td>工具声明</td><td><code>tools[].function</code></td><td><code>tools[].input_schema</code></td><td><code>functionDeclarations</code></td><td><code>ToolDefinition</code> + 各 wire 的 schema 方言</td></tr>
+        <tr><td>工具调用</td><td><code>tool_calls</code>，参数是字符串</td><td><code>tool_use</code> 块，参数是对象</td><td><code>functionCall</code>，参数是对象</td><td><code>ToolCall</code>，参数再统一解析</td></tr>
+        <tr><td>工具结果</td><td><code>role:tool</code> + <code>tool_call_id</code></td><td><code>tool_result</code> 块</td><td><code>functionResponse</code> part</td><td><code>ToolResult</code> 与调用的配对</td></tr>
+        <tr><td>流式</td><td>SSE <code>data:</code> 加 <code>[DONE]</code></td><td>SSE 事件类型：<code>message_start</code>、<code>content_block_delta</code>、<code>message_delta</code></td><td>SSE JSON 分片（<code>alt=sse</code>）</td><td><code>Decoder</code> 产出统一的 <code>StreamEvent</code></td></tr>
+        <tr><td>结束原因</td><td><code>stop</code>/<code>length</code>/<code>tool_calls</code>/<code>content_filter</code></td><td><code>end_turn</code>/<code>max_tokens</code>/<code>tool_use</code>/<code>stop_sequence</code></td><td><code>STOP</code>/<code>MAX_TOKENS</code>/<code>SAFETY</code></td><td><code>FinishReason</code> 与方言补充表</td></tr>
+        <tr><td>用量</td><td><code>prompt</code>/<code>completion</code>/<code>total</code></td><td><code>input</code>/<code>output</code> 加缓存读写</td><td><code>usageMetadata</code> 系列计数</td><td><code>Usage</code></td></tr>
+        <tr><td>缓存</td><td>会话头 / <code>prompt_cache_key</code></td><td><code>cache_control</code> 断点与 TTL</td><td><code>cachedContents</code> 资源</td><td>方言字段，不进公共模型</td></tr>
+        <tr><td>推理回放</td><td>reasoning 项与加密内容</td><td>thinking 块与签名</td><td>thought 签名</td><td><code>Reasoning</code> 内容 + 方言策略</td></tr>
+        <tr><td>结构化输出</td><td><code>response_format</code></td><td><code>output_config.format</code></td><td><code>responseSchema</code></td><td><code>output_schema</code> + 方言能力位</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p>差异不只有「字段叫什么」。真正难的是行为差异：有的网关流式不返回 usage，有的 <code>[DONE]</code> 不带结束原因，有的接受裸字符串回复，有的把输出上限叫 <code>max_tokens</code>、有的叫 <code>max_completion_tokens</code>。这些被显式列成方言的能力位，而不是散在 <code>if provider == ...</code> 里。</p>
+  </div>
+</section>
+
+<section id="seams">
+  <h2>3 公共与可变的切分</h2>
+  <p>切分的判据只有一句：<strong>语义归一，语法下沉；能变成数据的语法变成数据，不能的才写代码。</strong></p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 430" role="img" aria-label="左边是归一化的公共语义，右边是各厂商可变的语法与策略，中间由 wire 的 encode 和 decode 连接">
+      <defs>
+        <marker id="f4-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <text x="30" y="34" class="t-sm">公共：归一化语义</text>
+      <text x="510" y="34" class="t-sm">可变：语法、策略、行为</text>
+
+      <g>
+        <rect class="type" x="30" y="52" width="360" height="40" rx="8"/>
+        <text x="48" y="77" class="t-mono-sm">Message / AssistantContent</text>
+      </g>
+      <g>
+        <rect class="type" x="30" y="100" width="360" height="40" rx="8"/>
+        <text x="48" y="125" class="t-mono-sm">ToolCall / ToolResult（含配对）</text>
+      </g>
+      <g>
+        <rect class="type" x="30" y="148" width="360" height="40" rx="8"/>
+        <text x="48" y="173" class="t-mono-sm">Usage</text>
+      </g>
+      <g>
+        <rect class="type" x="30" y="196" width="360" height="40" rx="8"/>
+        <text x="48" y="221" class="t-mono-sm">FinishReason</text>
+      </g>
+      <g>
+        <rect class="type" x="30" y="244" width="360" height="40" rx="8"/>
+        <text x="48" y="269" class="t-mono-sm">StreamEvent</text>
+      </g>
+      <g>
+        <rect class="type" x="30" y="292" width="360" height="40" rx="8"/>
+        <text x="48" y="317" class="t-mono-sm">ProviderError（可重试性）</text>
+      </g>
+
+      <g>
+        <rect class="data" x="510" y="48" width="360" height="32" rx="8"/>
+        <text x="528" y="69" class="t-mono-sm">Auth / headers</text>
+      </g>
+      <g>
+        <rect class="data" x="510" y="88" width="360" height="32" rx="8"/>
+        <text x="528" y="109" class="t-mono-sm">Endpoint / routing</text>
+      </g>
+      <g>
+        <rect class="data" x="510" y="128" width="360" height="32" rx="8"/>
+        <text x="528" y="149" class="t-mono-sm">system 位置与后置 system</text>
+      </g>
+      <g>
+        <rect class="data" x="510" y="168" width="360" height="32" rx="8"/>
+        <text x="528" y="189" class="t-mono-sm">Tool schema 方言</text>
+      </g>
+      <g>
+        <rect class="data" x="510" y="208" width="360" height="32" rx="8"/>
+        <text x="528" y="229" class="t-mono-sm">流式分帧与结束语义</text>
+      </g>
+      <g>
+        <rect class="data" x="510" y="248" width="360" height="32" rx="8"/>
+        <text x="528" y="269" class="t-mono-sm">Finish / Usage 字段映射</text>
+      </g>
+      <g>
+        <rect class="data" x="510" y="288" width="360" height="32" rx="8"/>
+        <text x="528" y="309" class="t-mono-sm">推理回放、缓存、多模态体</text>
+      </g>
+
+      <line class="line" x1="392" y1="120" x2="500" y2="120" marker-end="url(#f4-arrow)"/>
+      <line class="dashed" x1="500" y1="150" x2="392" y2="150" marker-end="url(#f4-arrow)"/>
+      <text x="446" y="110" class="t-mono-sm" text-anchor="middle">encode</text>
+      <text x="446" y="172" class="t-mono-sm" text-anchor="middle">decode</text>
+      <text x="446" y="200" class="t-xs" text-anchor="middle">Wire</text>
+
+      <text x="30" y="380" class="t-sm">能数据化 → <tspan class="t-mono-sm">Quirks</tspan> 常量　　需要代码 → <tspan class="t-mono-sm">DialectHooks</tspan>　　新协议 → <tspan class="t-mono-sm">Wire</tspan>　　新 IO → <tspan class="t-mono-sm">Transport</tspan></text>
+      <text x="30" y="406" class="t-xs">右列不是「随便放」，而是按变化频率和是否需要执行代码排在四个不同高度的扩展点上。</text>
+    </svg>
+    <figcaption>左列只要变一次，所有厂商同时受益，所以它必须最稳定；右列每个方言各自一套，所以它必须最便宜。判断一个新差异放哪边，先问它是语义还是语法。</figcaption>
+  </figure>
+
+  <h3>3.1 四层扩展阶梯</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>差异的性质</th><th>扩展点</th><th>代价</th><th>例子</th></tr></thead>
+      <tbody>
+        <tr><td>身份、地址、能力位、路径</td><td><code>Dialect</code> 常量</td><td>一个 <code>const</code>，不改代码路径</td><td>Acme 网关、DeepSeek、Groq</td></tr>
+        <tr><td>请求信封、默认路由、默认指令</td><td><code>DialectHooks</code></td><td>一个函数指针，仍可序列化</td><td>按 key 推导端点、按模型选路由</td></tr>
+        <tr><td>新的请求/回复语法</td><td><code>Wire</code> + <code>Decoder</code> + <code>Fold</code></td><td>要写编解码器，但复用归一化类型和驱动</td><td>Gemini、Bedrock Converse、Cohere 原生</td></tr>
+        <tr><td>新的 IO 方式</td><td><code>Transport</code></td><td>一个 <code>send</code> 方法</td><td>AWS SDK、本地运行时、录制回放</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note stable">
+    <p>注意 <code>DialectHooks</code> 的设计：它存的是函数指针，比较的是指针地址，所以一个方言配置仍然可以序列化和反序列化。「可配置」和「可存储」在这里不冲突。</p>
+  </div>
+</section>
+
+<section id="tests">
+  <h2>4 功能测试的拆分</h2>
+  <p>Rig 的测试原则写得很直白：<strong>录制的真实流量是默认证据，合成语料不能证伪它自己的模型。</strong> 这句话决定了每一层的分工：越接近纯函数的越便宜，越接近真实流量的越有说服力。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 410" role="img" aria-label="测试分层：底部是大量快速单元测试，顶部是少量真实线上测试，中间是录制回放与运行时场景">
+      <g>
+        <rect class="neutral" x="310" y="34" width="280" height="48" rx="8"/>
+        <text x="450" y="55" class="t-sm" text-anchor="middle">Live provider（默认 ignore）</text>
+        <text x="450" y="72" class="t-xs" text-anchor="middle">要 key，慢，抓 provider 当前行为</text>
+      </g>
+      <g>
+        <rect class="data" x="230" y="94" width="440" height="48" rx="8"/>
+        <text x="450" y="115" class="t-sm" text-anchor="middle">Cassette 回放 · 18 个 provider 套件</text>
+        <text x="450" y="132" class="t-xs" text-anchor="middle">867 份录制；同时比对出站请求体</text>
+      </g>
+      <g>
+        <rect class="type" x="150" y="154" width="600" height="48" rx="8"/>
+        <text x="450" y="175" class="t-sm" text-anchor="middle">Reply bank + runtime 套件</text>
+        <text x="450" y="192" class="t-xs" text-anchor="middle">真实回复形状，跨 provider 跑同一套 agent 语义</text>
+      </g>
+      <g>
+        <rect class="plain" x="90" y="214" width="720" height="48" rx="8"/>
+        <text x="450" y="235" class="t-sm" text-anchor="middle">Effect goldens · history conformance · verify</text>
+        <text x="450" y="252" class="t-xs" text-anchor="middle">副作用总线、历史迁移、录制引擎自身</text>
+      </g>
+      <g>
+        <rect class="neutral" x="30" y="274" width="840" height="48" rx="8"/>
+        <text x="450" y="295" class="t-sm" text-anchor="middle">单元测试：模块旁的 tests.rs</text>
+        <text x="450" y="312" class="t-xs" text-anchor="middle">编码器、解码器、结束映射、请求整形</text>
+      </g>
+
+      <text x="30" y="366" class="t-xs">另有两条不按层排的：frozen_api 的 8 个程序钉住编译期契约；corpus 的 17 个包只用公共 API 写完整插件。</text>
+      <text x="30" y="390" class="t-xs">越往上越接近真实流量，越往下越快、越便宜。缺任何一层都会留下一种看不见的漂移。</text>
+    </svg>
+    <figcaption>这张图不是「测试金字塔」的口号版：每一层抓的是不同种类的错误。只写单元测试，抓不到 wire 漂移；只录 cassette，抓不到 agent 循环语义；只跑 live，抓不到可复现的回归。</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>层</th><th>证据</th><th>能抓</th><th>抓不到</th></tr></thead>
+      <tbody>
+        <tr><td>单元测试</td><td>模块旁的 <code>tests.rs</code></td><td>编码器、解码器、结束映射、请求整形的内部逻辑</td><td>真实厂商的线上格式漂移</td></tr>
+        <tr><td>Frozen API</td><td><code>examples/frozen_api/</code> 8 个程序</td><td>公共类型和 trait 的形状被破坏</td><td>任何运行期行为</td></tr>
+        <tr><td>Cassette 回放</td><td><code>fixtures/cassettes/&lt;provider&gt;</code> 的 867 份录制</td><td>响应解析、流式事件、出站请求体形状</td><td>录制之后厂商行为的变化</td></tr>
+        <tr><td>Reply bank / runtime</td><td>每个 provider 的真实回复形状</td><td>agent 循环、工具生命周期、结束方式、恢复</td><td>出站请求体</td></tr>
+        <tr><td>Effect goldens / verify</td><td>录制回放产生的 effect 日志</td><td>副作用总线、录制引擎、历史迁移</td><td>网络与厂商</td></tr>
+        <tr><td>Live provider</td><td>真 key，默认 <code>#[ignore]</code></td><td>厂商当前的真实行为</td><td>稳定复现，成本也高</td></tr>
+        <tr><td>Corpus</td><td>17 个只依赖公共 API 的插件包</td><td>公共 API 还能不能写出现实插件</td><td>provider 行为</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p>最容易被忽略的一条：cassette 不只验证响应。<strong>它会把出站请求体也和录制比对</strong>，所以「回复处理对了，但请求形状悄悄变了」会在 mock 未命中时失败。这就是为什么它可以当作请求边界的断言层。</p>
+  </div>
+
+  <h3>4.1 为什么这四层缺一不可</h3>
+  <ul>
+    <li>单元测试证明「我们理解了自己的代码」。</li>
+    <li>cassette 证明「我们的代码能处理真实字节，并且请求没有漂移」。</li>
+    <li>reply bank 证明「同一套 agent 语义在每个 provider 上都成立」。</li>
+    <li>live 证明「provider 没有在我们背后改行为」。</li>
+  </ul>
+  <p>再往上一层，corpus 和 frozen_api 证明「别人还能用你的 API」。这五件事各自否证不同的假设，不能互相替代。</p>
+</section>
+
+<hr class="rule">
+
+<section id="demo">
+  <h2>5 封装演示：从零接一个厂商</h2>
+  <p>假设你有一个 Acme 网关，它说 OpenAI Chat 方言，但流式不返回 usage，不支持结构化输出，并且结束流时只发 <code>[DONE]</code> 不带 <code>finish_reason</code>。你要写多少代码？答案是一个常量。</p>
+
+  <h3>第一步：能数据化的，写数据</h3>
+<pre><code>pub const ACME: Dialect = Dialect::gateway(
+    "acme",
+    "https://api.acme.test/v1",
+    "ACME_API_KEY",
+)
+.with_quirks(
+    Quirks::openai()
+        .without_stream_usage()
+        .without_response_format()
+        .done_without_finish_reason(),
+);
+
+let acme = OpenAIConfig::from_env_with(&amp;ACME)?.client();
+let model = acme.completion("acme-large");</code></pre>
+  <p class="src">参考：<code>examples/frozen_api/p7_openai_compatible_vendor.rs</code>。到这一步，鉴权、路径、能力位、结束语义全部就位，请求编码和回复解码复用的是整个 OpenAI 家族。</p>
+
+  <h3>第二步：需要代码的，写钩子</h3>
+  <p>如果 Acme 还需要「按 key 推导端点」或「每个请求加一个签名头」，不要改 wire 主体，挂到 <code>DialectHooks</code>：</p>
+<pre><code>static ACME_HOOKS: DialectHooks = DialectHooks {
+    default_endpoint: Some(derive_endpoint_from_key),
+    model_route: None,
+    completion_envelope: Some(sign_request),
+    modality_envelope: None,
+};</code></pre>
+  <p>钩子仍然挂在方言数据上，所以存下来的 wire 仍然能反序列化。这是「可变」和「可存储」之间的折中。</p>
+
+  <h3>第三步：不是这个方言，才写 wire</h3>
+  <p>如果 Acme 换了消息容器、工具块或流式事件类型，它就不是 OpenAI 方言。这时你实现 <code>Wire</code>，但只写三件事：<code>encode</code>、<code>Decoder</code>、可选的 <code>Reassembler</code>。下面这些全部复用：</p>
+  <ul>
+    <li><code>Operation</code> 与 <code>Fold</code>：事件怎么折叠成响应。</li>
+    <li><code>Model</code> 与驱动：流式和整包同一条路径。</li>
+    <li>归一化类型：<code>Message</code>、<code>ToolCall</code>、<code>Usage</code>、<code>FinishReason</code>。</li>
+    <li>错误分类、重试、空闲超时、遥测。</li>
+  </ul>
+
+  <h3>第四步：不是 HTTP，才写 transport</h3>
+  <p>Bedrock 是一个好例子：它的 wire 是 Converse JSON，但传输走 AWS SDK，帧是二进制的 event stream。它只实现了自己的 <code>Wire</code> 和 <code>Transport</code>，上层完全没有变化。</p>
+
+  <h3>第五步：测试按层加，不要只加一种</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>你要证明的</th><th>加什么</th><th>位置</th></tr></thead>
+      <tbody>
+        <tr><td>方言常量本身正确</td><td>一个单元测试，断言路径、能力位、鉴权</td><td>wire 模块的 <code>tests.rs</code></td></tr>
+        <tr><td>真实字节能解析，请求不漂移</td><td>一个 cassette 套件</td><td><code>crates/rig-cassette/tests/providers/acme/</code></td></tr>
+        <tr><td>agent 循环在这个 provider 上成立</td><td>把回复形状加进 reply bank</td><td><code>fixtures/bank/</code></td></tr>
+        <tr><td>公共 API 仍然能扩展</td><td>一个只依赖公共 API 的 corpus 包</td><td><code>corpus/</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note stable">
+    <p>封装的好坏不体现在「支持了多少厂商」，而体现在<strong>加第 28 个厂商时你要碰几个文件</strong>。Rig 的答案是：如果是方言，一个常量加一份录制；如果是新协议，一个 wire 加一个 transport，上层零改动。</p>
+  </div>
+</section>
+
+<section id="extract">
+  <h2>6 你可以直接抄走的抽象</h2>
+  <p>如果你在自己的框架里重建这套东西，最小集合是六个类型、三张表、两个 trait、一个折叠，外加一套分层测试。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>类别</th><th>内容</th><th>为什么是它</th></tr></thead>
+      <tbody>
+        <tr><td>六个归一化类型</td><td><code>Message</code>、<code>ToolCall/Result</code>、<code>Usage</code>、<code>FinishReason</code>、<code>StreamEvent</code>、<code>Error</code></td><td>跨厂商唯一稳定的东西是语义，不是字段名</td></tr>
+        <tr><td>三张数据表</td><td>方言身份与路径、能力位、模型事实</td><td>变化快，必须能改数据而不改代码</td></tr>
+        <tr><td>两个 trait</td><td><code>Wire</code>（纯函数、可序列化）、<code>Transport</code>（唯一 IO）</td><td>把协议和 IO 彻底分开，回放才成为可能</td></tr>
+        <tr><td>一个折叠</td><td><code>Fold</code>：事件加结束 → 响应</td><td>流式和整包共用一条路径</td></tr>
+        <tr><td>一条副作用通道</td><td>所有模型调用、工具调用、宿主动作都是 effect</td><td>审计、预算、审批、回放只挂一处</td></tr>
+        <tr><td>一套分层测试</td><td>单元 → 录制回放 → 运行时场景 → live，加编译期契约</td><td>每层否证不同的假设，不能互相替代</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>最后用一句话收束这四件事：<strong>流程是状态机，差异是数据，公共部分只有一个语义内核，测试按「证据离真实流量多远」分层。</strong> 你把新东西往这四条线上放，它自己就会落到正确的层。</p>
+</section>
+
+</div>

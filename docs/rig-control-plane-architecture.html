@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Rig 控制平面架构</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --color-paper:  #f5f5f5;
+    --color-panel:  #ffffff;
+    --color-ink:    #2d3142;
+    --color-muted:  #4f5d75;
+    --color-soft:   #5a6580;
+    --color-accent: #bf4520;
+    --color-accent-tint: rgba(191,69,32,0.08);
+    --color-rule:   rgba(45,49,66,0.12);
+    --font-sans:  'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
+    --font-serif: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif;
+    --font-mono:  'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    color-scheme: light;
+  }
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    padding-block: 3rem 4rem;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    -webkit-font-smoothing: antialiased;
+  }
+  .frame { max-width: 1360px; margin: 0 auto; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.66rem; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--color-muted); margin-bottom: 0.65rem;
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(1.6rem, 2.6vw + 0.8rem, 2.35rem);
+    font-weight: 400; letter-spacing: -0.02em; line-height: 1.15;
+    margin-bottom: 1rem; text-wrap: balance;
+  }
+  .lede { color: var(--color-muted); font-size: 0.94rem; line-height: 1.7; max-width: 52rem; }
+  .lede code, .section-note code, .caption code, .card code, td code, li code {
+    font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-ink);
+    background: rgba(45,49,66,0.05); padding: 0.05rem 0.25rem; border-radius: 3px;
+    overflow-wrap: anywhere;
+  }
+  section { margin-top: 3.5rem; }
+  h2 {
+    font-family: var(--font-serif); font-size: 1.35rem; font-weight: 400;
+    letter-spacing: -0.01em; margin-bottom: 0.5rem; text-wrap: balance;
+  }
+  .section-note { color: var(--color-muted); font-size: 0.88rem; line-height: 1.65; max-width: 54rem; margin-bottom: 1.25rem; }
+  .diagram-container { width: 100%; overflow-x: auto; }
+  .diagram-container > svg { width: 100%; min-width: 1280px; display: block; }
+  svg text { font-variant-numeric: tabular-nums; }
+  svg .nm { font-family: var(--font-sans); font-size: 12px; font-weight: 600; fill: var(--color-ink); }
+  svg .nm13 { font-family: var(--font-sans); font-size: 13px; font-weight: 600; fill: var(--color-ink); }
+  svg .sb { font-family: var(--font-mono); font-size: 9px; fill: var(--color-muted); }
+  svg .tg { font-family: var(--font-mono); font-size: 7px; fill: var(--color-ink); letter-spacing: 0.08em; }
+  svg .tga { font-family: var(--font-mono); font-size: 7px; fill: var(--color-accent); letter-spacing: 0.08em; }
+  svg .al { font-family: var(--font-mono); font-size: 8px; fill: var(--color-muted); letter-spacing: 0.06em; }
+  svg .ax { font-family: var(--font-mono); font-size: 8px; fill: var(--color-muted); letter-spacing: 0.14em; }
+  svg .ch { font-family: var(--font-sans); font-size: 12px; fill: var(--color-muted); }
+  svg .co { font-family: var(--font-serif); font-style: italic; font-size: 14px; fill: var(--color-ink); }
+  .caption {
+    font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.75;
+    color: var(--color-muted); margin-top: 0.85rem; max-width: 64rem;
+  }
+  .table-wrap { overflow-x: auto; margin-top: 1.25rem; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.85rem; }
+  caption { text-align: left; font-family: var(--font-mono); font-size: 0.69rem; color: var(--color-muted); padding-bottom: 0.7rem; }
+  th {
+    text-align: left; font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-muted);
+    padding: 0 0.9rem 0.55rem 0; border-bottom: 1px solid var(--color-rule); white-space: nowrap;
+  }
+  td { padding: 0.62rem 0.9rem 0.62rem 0; border-bottom: 1px solid var(--color-rule); vertical-align: top; line-height: 1.55; }
+  td:first-child { font-family: var(--font-mono); font-size: 0.79rem; white-space: nowrap; }
+  tr.hot td:first-child { color: var(--color-accent); font-weight: 500; }
+  .cards { display: grid; grid-template-columns: 1.15fr 1fr 0.9fr; gap: 1.25rem; margin-top: 1.5rem; }
+  .card { background: var(--color-panel); border: 1px solid var(--color-rule); border-radius: 6px; padding: 1.25rem; min-width: 0; }
+  .card .eyebrow { margin-bottom: 0.5rem; }
+  .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .card-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+  .card-dot.coral { background: var(--color-accent); }
+  .card-dot.ink { background: var(--color-ink); }
+  .card-dot.muted { background: var(--color-muted); }
+  .card h3 { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; }
+  .card p, .card li { font-size: 0.84rem; line-height: 1.65; color: var(--color-muted); }
+  .card ul, .card ol { padding-left: 1.1rem; margin-top: 0.4rem; }
+  .card li + li { margin-top: 0.3rem; }
+  .card p strong, .card li strong { color: var(--color-ink); font-weight: 600; }
+  .strip { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; gap: 1.25rem; margin-top: 1.25rem; }
+  .strip-item { background: var(--color-panel); border: 1px solid var(--color-rule); border-radius: 6px; padding: 1rem 1.25rem; min-width: 0; }
+  .strip-item h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem; }
+  .strip-item p { font-size: 0.82rem; line-height: 1.65; color: var(--color-muted); }
+  .strip-item code { font-family: var(--font-mono); font-size: 0.76rem; color: var(--color-ink); background: rgba(45,49,66,0.05); padding: 0.05rem 0.25rem; border-radius: 3px; }
+  .pills { margin-top: 1rem; }
+  .pill {
+    display: inline-block; font-family: var(--font-mono); font-size: 0.72rem;
+    border: 1px solid var(--color-rule); border-radius: 999px;
+    padding: 0.15rem 0.7rem; margin: 0.2rem 0.35rem 0.2rem 0; color: var(--color-ink);
+    background: var(--color-panel);
+  }
+  .chain {
+    font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-ink);
+    background: var(--color-panel); border: 1px solid var(--color-rule); border-radius: 6px;
+    padding: 0.9rem 1.1rem; margin-top: 1rem; overflow-x: auto; white-space: nowrap;
+  }
+  footer {
+    margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--color-rule);
+    font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.8; color: var(--color-muted);
+  }
+  @media print {
+    .diagram-container { overflow-x: visible; }
+    .diagram-container > svg { min-width: 0; }
+  }
+  @media (max-width: 900px) {
+    body { padding: 2rem 1rem 3rem; }
+    .cards, .strip { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <p class="eyebrow">rig-transformation-plan · §3–§10</p>
+  <h1>Rig 控制平面架构</h1>
+  <p class="lede">
+    rig 留作数据平面（L0 / L1：消息、wire / driver、工具契约、effect 记录），你补控制平面（执行、编排、用例、持久化、观测）。
+    四张图各回答一个问题：主栈怎么分层、三场景怎么走同一条栈、effect 七阶段怎么转、journal 怎么记和恢复。
+    依赖只向下，横切面只依赖 L0。
+  </p>
+
+  <!-- ===================== 1. LAYER STACK ===================== -->
+  <section>
+    <p class="eyebrow">图 1 · layer stack</p>
+    <h2>主栈六层，两面横切</h2>
+    <p class="section-note">
+      层的判据是组合关系：上层把下层组合成更大的行为单元。L4 是唯一组合根，有图走 L3，无图直达 L2。
+      持久化与观测是被各层调用的面，不是层：它们接收事件，但只依赖 L0 的可序列化类型，所以可替换、可测试。
+    </p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f1-title f1-desc">
+        <title id="f1-title">Rig 控制平面主栈与横切面</title>
+        <desc id="f1-desc">六层主栈依赖只向下，L4 可直达 L2；持久化与观测两面只依赖 L0，由各层写入。</desc>
+        <defs>
+          <marker id="f1-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+          <marker id="f1-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <!-- direction rail -->
+        <text x="40" y="52" class="ax">DEPENDENCY ↓</text>
+        <line x1="72" y1="72" x2="72" y2="616" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+
+        <!-- connectors first -->
+        <line x1="470" y1="144" x2="470" y2="160" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <line x1="470" y1="240" x2="470" y2="256" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <line x1="470" y1="336" x2="470" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <line x1="470" y1="432" x2="470" y2="448" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <line x1="470" y1="528" x2="470" y2="544" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <path d="M 820,192 H 864 Q 872,192 872,200 V 384 Q 872,392 864,392 H 820" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <path d="M 940,300 H 904 Q 896,300 896,308 V 558 Q 896,566 904,566 H 820" fill="none" stroke="#bf4520" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#f1-accent)"/>
+        <path d="M 940,500 H 928 Q 920,500 920,508 V 586 Q 920,594 928,594 H 820" fill="none" stroke="#bf4520" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#f1-accent)"/>
+
+        <!-- arrow labels -->
+        <rect x="480" y="145" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="506" y="155" class="al" text-anchor="middle">CONSUMES</text>
+        <rect x="480" y="241" width="44" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="502" y="251" class="al" text-anchor="middle">ROUTES</text>
+        <rect x="480" y="337" width="40" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="500" y="347" class="al" text-anchor="middle">STEPS</text>
+        <rect x="480" y="433" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="506" y="443" class="al" text-anchor="middle">DISPATCH</text>
+        <rect x="480" y="529" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="504" y="539" class="al" text-anchor="middle">EXPRESS</text>
+        <rect x="882" y="270" width="48" height="13" rx="2" fill="#f5f5f5"/>
+        <text x="906" y="280" class="al" text-anchor="middle">DIRECT</text>
+        <rect x="882" y="287" width="48" height="13" rx="2" fill="#f5f5f5"/>
+        <text x="906" y="297" class="al" text-anchor="middle">S1·S3</text>
+        <rect x="828" y="548" width="56" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="856" y="557" class="al" text-anchor="middle">L0 ONLY</text>
+        <rect x="828" y="576" width="56" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="856" y="585" class="al" text-anchor="middle">L0 ONLY</text>
+
+        <!-- six layers -->
+        <g>
+          <rect x="120" y="64" width="700" height="80" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="64" width="700" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="128" y="76" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="86" class="tg" text-anchor="middle">L5</text>
+          <text x="170" y="102" class="nm13">L5 宿主层</text>
+          <text x="170" y="124" class="sb">http · cli · web · cron · consumes only</text>
+
+          <rect x="120" y="160" width="700" height="80" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="160" width="700" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="128" y="172" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="182" class="tg" text-anchor="middle">L4</text>
+          <text x="170" y="198" class="nm13">L4 应用层 your-app</text>
+          <text x="170" y="220" class="sb">run_agent · resume · observe · picks L3 or L2</text>
+
+          <rect x="120" y="256" width="700" height="80" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="256" width="700" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="128" y="268" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="278" class="tg" text-anchor="middle">L3</text>
+          <text x="170" y="294" class="nm13">L3 编排层 your-graph</text>
+          <text x="170" y="316" class="sb">nodes · edges · fork-map-join · json only</text>
+
+          <rect x="120" y="352" width="700" height="80" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="352" width="700" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="128" y="364" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="374" class="tg" text-anchor="middle">L2</text>
+          <text x="170" y="390" class="nm13">L2 执行层 your-exec</text>
+          <text x="170" y="412" class="sb">1-step or n-step · stop · budget · compact · steer</text>
+
+          <rect x="120" y="448" width="700" height="80" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="448" width="700" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="128" y="460" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="470" class="tg" text-anchor="middle">L1</text>
+          <text x="170" y="486" class="nm13">L1 调用层 your-call</text>
+          <text x="170" y="508" class="sb">model · tool · mcp · skill · human · one dispatch</text>
+
+          <rect x="120" y="544" width="700" height="80" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="544" width="700" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="128" y="556" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="566" class="tg" text-anchor="middle">L0</text>
+          <text x="170" y="582" class="nm13">L0 契约层 your-core</text>
+          <text x="170" y="604" class="sb">message · wire · session · run · serializable</text>
+        </g>
+
+        <!-- two planes -->
+        <g>
+          <rect x="940" y="160" width="300" height="200" rx="8" fill="#f5f5f5"/>
+          <rect x="940" y="160" width="300" height="200" rx="8" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2" stroke-dasharray="4,4"/>
+          <rect x="948" y="170" width="40" height="14" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="968" y="180" class="tga" text-anchor="middle">PLANE</text>
+          <text x="948" y="206" class="nm13">持久化面 your-persist</text>
+          <text x="948" y="228" class="sb">journal · checkpoint · replay</text>
+          <text x="948" y="246" class="sb">session · human interrupts</text>
+          <text x="948" y="282" class="ch">L1 · L2 · L3 · L4 写入</text>
+          <text x="948" y="302" class="ch">只依赖 L0 的可序列化类型</text>
+
+          <rect x="940" y="376" width="300" height="168" rx="8" fill="#f5f5f5"/>
+          <rect x="940" y="376" width="300" height="168" rx="8" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2" stroke-dasharray="4,4"/>
+          <rect x="948" y="386" width="40" height="14" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="968" y="396" class="tga" text-anchor="middle">PLANE</text>
+          <text x="948" y="422" class="nm13">可观测面 your-observe</text>
+          <text x="948" y="444" class="sb">trace · metrics · projection</text>
+          <text x="948" y="462" class="sb">five groups · link chain</text>
+          <text x="948" y="498" class="ch">L1 · L2 · L3 · L4 写入</text>
+          <text x="948" y="518" class="ch">只依赖 L0 · 指标是投影</text>
+        </g>
+
+        <!-- legend -->
+        <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <text x="40" y="686" class="ax">LEGEND</text>
+        <rect x="128" y="676" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="152" y="685" class="al">layer · depends below</text>
+        <rect x="308" y="676" width="16" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="332" y="685" class="al">plane · L0 only</text>
+        <line x1="468" y1="681" x2="498" y2="681" stroke="#4f5d75" stroke-width="1" marker-end="url(#f1-arrow)"/>
+        <text x="506" y="685" class="al">dependency</text>
+        <text x="620" y="685" class="al">DIRECT = L4 to L2 with no graph</text>
+      </svg>
+    </div>
+    <p class="caption">
+      依赖规则 R1 紧邻依赖（L4 例外，可选 L3 或 L2）· R3 横切面被各层写入但只依赖 L0 · R5 跨层只传 L0 可序列化类型 ·
+      R4 适配器向内依赖端口 · R6 L0 不碰 runtime 与 IO。检验句：每一层只能用紧邻下层的公开契约，上层回调下层即画错。
+    </p>
+  </section>
+
+  <!-- ===================== 2. PROCESS ===================== -->
+  <section>
+    <p class="eyebrow">图 2 · process</p>
+    <h2>三场景是同一条栈的三种走法</h2>
+    <p class="section-note">
+      单次调用不另开通道：它要么是 L2 的一步执行，要么是单节点工作流。自主性不是新引擎，是 L2 的策略装配。
+      三条路径起点都是 L5 宿主，差别只在是否经过图解释器，以及 L2 装了多少策略。
+    </p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f2-title f2-desc">
+        <title id="f2-title">三场景在同一条栈上的三种走法</title>
+        <desc id="f2-desc">场景一与三从 L4 直达 L2，场景二经 L3 图解释器；自主性是 L2 的策略装配。</desc>
+        <defs>
+          <marker id="f2-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <!-- connectors first -->
+        <line x1="262" y1="352" x2="478" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <path d="M 170,300 V 164 Q 170,156 178,156 H 478" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <line x1="620" y1="194" x2="620" y2="298" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <line x1="762" y1="352" x2="838" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <line x1="1012" y1="352" x2="1088" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <path d="M 906,92 Q 820,140 706,288" fill="none" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
+        <circle cx="704" cy="292" r="2" fill="#2d3142"/>
+
+        <!-- arrow labels -->
+        <rect x="336" y="332" width="68" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="370" y="342" class="al" text-anchor="middle">S1·S3 DIRECT</text>
+        <rect x="630" y="239" width="44" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="652" y="249" class="al" text-anchor="middle">SCEN 2</text>
+        <rect x="774" y="332" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="800" y="342" class="al" text-anchor="middle">DISPATCH</text>
+        <rect x="1028" y="332" width="44" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="1050" y="342" class="al" text-anchor="middle">SETTLE</text>
+
+        <!-- callout -->
+        <text x="1240" y="72" class="co" text-anchor="end">autonomy is policy load, not a new engine</text>
+
+        <!-- main rail -->
+        <g>
+          <rect x="80" y="300" width="180" height="104" rx="6" fill="#f5f5f5"/>
+          <rect x="80" y="300" width="180" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="88" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="102" y="320" class="tg" text-anchor="middle">L4</text>
+          <text x="88" y="344" class="nm13">L4 应用层</text>
+          <text x="88" y="366" class="sb">run_agent · resume</text>
+
+          <rect x="480" y="300" width="280" height="104" rx="6" fill="#f5f5f5"/>
+          <rect x="480" y="300" width="280" height="104" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+          <rect x="488" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="502" y="320" class="tga" text-anchor="middle">L2</text>
+          <text x="488" y="344" class="nm13">L2 执行单元 your-exec</text>
+          <text x="488" y="366" class="sb">s1: steps · budget-capped</text>
+          <text x="488" y="384" class="sb">s3: stop · budget · compact · steer</text>
+
+          <rect x="840" y="300" width="170" height="104" rx="6" fill="#f5f5f5"/>
+          <rect x="840" y="300" width="170" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="848" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="862" y="320" class="tg" text-anchor="middle">L1</text>
+          <text x="848" y="344" class="nm13">L1 调度</text>
+          <text x="848" y="366" class="sb">effect dispatch</text>
+
+          <rect x="1090" y="300" width="150" height="104" rx="6" fill="#f5f5f5"/>
+          <rect x="1090" y="300" width="150" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="1098" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="1112" y="320" class="tg" text-anchor="middle">L0</text>
+          <text x="1098" y="344" class="nm13">L0 契约</text>
+          <text x="1098" y="366" class="sb">serializable</text>
+        </g>
+
+        <!-- optional L3 detour -->
+        <g>
+          <rect x="480" y="120" width="280" height="72" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+          <rect x="488" y="130" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="502" y="140" class="tg" text-anchor="middle">L3</text>
+          <text x="488" y="162" class="nm13">L3 图解释器 · 场景二专用</text>
+          <text x="488" y="182" class="sb">nodes · edges · json only</text>
+        </g>
+
+        <!-- legend -->
+        <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <text x="40" y="686" class="ax">LEGEND</text>
+        <rect x="128" y="676" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="152" y="685" class="al">engages</text>
+        <rect x="240" y="676" width="16" height="10" rx="2" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="264" y="685" class="al">optional · scen 2 only</text>
+        <rect x="412" y="676" width="16" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1"/>
+        <text x="436" y="685" class="al">focal · L2 unit</text>
+        <line x1="552" y1="681" x2="582" y2="681" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <text x="590" y="685" class="al">route</text>
+      </svg>
+    </div>
+    <div class="strip">
+      <div class="strip-item">
+        <h3><span class="card-dot ink"></span>S1 · 单次 agent</h3>
+        <p><code>L5 → L4 → L2 → L1 → L0</code>。一个 run，一个执行单元，一步或多步，轮数由预算限定。工具、MCP、skill 都落在 L1。</p>
+      </div>
+      <div class="strip-item">
+        <h3><span class="card-dot muted"></span>S2 · 图编排</h3>
+        <p><code>L5 → L4 → L3 → L2 → L1 → L0</code>。节点是 L2 执行单元，边上传 JSON。Fork / Map / Join 做并行，子图用路径前缀隔离。</p>
+      </div>
+      <div class="strip-item">
+        <h3><span class="card-dot coral"></span>S3 · 自主循环</h3>
+        <p>与 S1 同路，L2 装满四组策略（停止、预算、压缩、转向）加 turn 边界检查点。子 agent 是带 parent 的 effect。</p>
+      </div>
+    </div>
+    <p class="caption">
+      场景二的模型节点、工具节点在 L2 里都是单次执行单元，Agent 节点是多步执行单元，L3 不需要为不同节点写不同调度。
+      工具快照与 skill 快照随 run 持久化，MCP 离线仍可回放。
+    </p>
+  </section>
+
+  <!-- ===================== execution cards ===================== -->
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">§3.7 · one call</p>
+      <div class="card-header"><span class="card-dot ink"></span><h3>一次调用穿过各层</h3></div>
+      <ul>
+        <li><strong>L4</strong> 创建 run：<code>run_id</code> 加工具 / skill 快照，写 <code>run_started</code></li>
+        <li><strong>L3</strong>（有图）选下一节点，写 <code>node_started</code></li>
+        <li><strong>L2</strong> 取下一步：单步执行或 AgentRun 状态机推进</li>
+        <li><strong>L1</strong> 调度 effect：<code>effect_begin → settled</code>，模型、工具、MCP、skill、人工走同一个入口</li>
+        <li><strong>L0</strong> 表达请求与响应，适配器执行真实交互</li>
+        <li>返回时逐层归一化，写节点事件与检查点，投影到 trace 与指标，事件流交回宿主</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">§5.2 · primitive</p>
+      <div class="card-header"><span class="card-dot coral"></span><h3>Effect 是唯一的执行原语</h3></div>
+      <ul>
+        <li>一套调度意味着录制、回放、重试、预算、审批、观测只实现一次</li>
+        <li>门是策略（L2 工具门 / 模型门、L3 节点门），<code>begin = human_requested</code>，<code>settled = human_answered</code></li>
+        <li>长连接订阅是新 effect 类型，不是新通道</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">mini-rig · today</p>
+      <div class="card-header"><span class="card-dot muted"></span><h3>mini-rig 对照</h3></div>
+      <ul>
+        <li><code>wire.rs / driver.rs</code> 已是 L1 形状：encode 纯函数，Transport 是唯一 IO</li>
+        <li><code>effect.rs</code> 七阶段是 L1 加 L2 简化版；缺 journal、检查点、人工 effect</li>
+        <li><code>agent.rs::run</code> 是 L2 单循环；缺停止、预算、压缩、转向</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===================== 3. STATE MACHINE ===================== -->
+  <section>
+    <p class="eyebrow">图 3 · state machine · lifecycle</p>
+    <h2>Effect 七阶段，一帧跑到不动点</h2>
+    <p class="section-note">
+      一个 effect 沿主轨推进，执行后回到 Review，Commit 派生新 effect（工具调用或下一轮模型调用）或落 settled。
+      拒绝不是丢弃：被拒的工具调用仍产生一条 tool result（<code>refused: …</code>）回填给模型，会话顺序按调用声明顺序，不按完成顺序。
+    </p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f3-title f3-desc">
+        <title id="f3-title">Effect 七阶段固定点循环</title>
+        <desc id="f3-desc">effect 沿七阶段主轨推进，拒绝回 Review 并回填，执行后回到 Review，Commit 落 settled。</desc>
+        <defs>
+          <marker id="f3-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <!-- connectors first -->
+        <line x1="204" y1="232" x2="236" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="372" y1="232" x2="404" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="540" y1="232" x2="572" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="708" y1="232" x2="740" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="876" y1="232" x2="908" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="1044" y1="232" x2="1076" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <path d="M 1144,268 V 316 Q 1144,324 1136,324 H 312 Q 304,324 304,316 V 270" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <path d="M 976,196 V 148 Q 976,140 968,140 H 312 Q 304,140 304,148 V 194" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#f3-arrow)"/>
+        <line x1="640" y1="268" x2="640" y2="402" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <path d="M 344,566 Q 452,556 544,448" fill="none" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
+        <circle cx="546" cy="444" r="2" fill="#2d3142"/>
+
+        <!-- arrow labels -->
+        <rect x="706" y="332" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="730" y="342" class="al" text-anchor="middle">EXECUTE</text>
+        <rect x="618" y="118" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="642" y="128" class="al" text-anchor="middle">REFUSED</text>
+        <rect x="586" y="340" width="44" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="608" y="350" class="al" text-anchor="middle">COMMIT</text>
+
+        <!-- callout -->
+        <text x="70" y="580" class="co" text-anchor="start">先写 journal，再产生可见效果</text>
+        <text x="70" y="612" class="ch">门是策略，人工交互仍是一条 effect：begin 写 human_requested，settled 写 human_answered，中间有检查点</text>
+
+        <!-- seven stages -->
+        <g>
+          <rect x="70" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="70" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="136" y="226" class="nm" text-anchor="middle">Arrive</text>
+          <text x="136" y="248" class="sb" text-anchor="middle">spawn</text>
+
+          <rect x="238" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="238" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="304" y="226" class="nm" text-anchor="middle">Review</text>
+          <text x="304" y="248" class="sb" text-anchor="middle">review()</text>
+
+          <rect x="406" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="406" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="472" y="226" class="nm" text-anchor="middle">Commit</text>
+          <text x="472" y="248" class="sb" text-anchor="middle">settle · spawn</text>
+
+          <rect x="574" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="574" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="640" y="226" class="nm" text-anchor="middle">Admit</text>
+          <text x="640" y="248" class="sb" text-anchor="middle">pass</text>
+
+          <rect x="742" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="742" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="808" y="226" class="nm" text-anchor="middle">Prepare</text>
+          <text x="808" y="248" class="sb" text-anchor="middle">prepare()</text>
+
+          <rect x="910" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="910" y="196" width="132" height="72" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+          <text x="976" y="226" class="nm" text-anchor="middle">Gate</text>
+          <text x="976" y="248" class="sb" text-anchor="middle">gate() · human?</text>
+
+          <rect x="1078" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="1078" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="1144" y="226" class="nm" text-anchor="middle">Start</text>
+          <text x="1144" y="248" class="sb" text-anchor="middle">execute()</text>
+        </g>
+
+        <!-- terminal -->
+        <g>
+          <rect x="548" y="404" width="184" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="548" y="404" width="184" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="640" y="434" class="nm" text-anchor="middle">Settled 提交</text>
+          <text x="640" y="456" class="sb" text-anchor="middle">model→next turn · tool→slot</text>
+        </g>
+
+        <!-- legend -->
+        <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <text x="40" y="686" class="ax">LEGEND</text>
+        <rect x="128" y="676" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="152" y="685" class="al">stage</text>
+        <rect x="220" y="676" width="16" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1"/>
+        <text x="244" y="685" class="al">gate · decide point</text>
+        <line x1="384" y1="681" x2="414" y2="681" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#f3-arrow)"/>
+        <text x="422" y="685" class="al">refused path</text>
+        <line x1="548" y1="681" x2="578" y2="681" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <text x="586" y="685" class="al">advance · return</text>
+      </svg>
+    </div>
+    <p class="caption">
+      现状插件三方法：prepare 改请求，gate 拒绝，review 改结果。目标补齐：Commit 先写 journal 再产生可见效果；
+      Gate 可挂起为人工 effect（human_requested 到检查点到 human_answered）；settle_tool 按 call_id 槽位回填；
+      确定性 effect id 加去重。拒绝回 Review 后，工具走回填路径，模型走结束路径。
+    </p>
+  </section>
+
+  <!-- ===================== 4. TIMELINE ===================== -->
+  <section>
+    <p class="eyebrow">图 4 · timeline</p>
+    <h2>持久化：事件溯源加检查点</h2>
+    <p class="section-note">
+      追加日志记录事实，检查点保存快照加游标，恢复时加载快照再重放游标之后的事件。
+      人工中断挂在第二条时间线上：只有 human_requested 时保持挂起，有 human_answered 即应用决策继续。
+    </p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f4-title f4-desc">
+        <title id="f4-title">Journal 事件序列与人工中断挂起</title>
+        <desc id="f4-desc">journal 主轨记录五类事件并定期打检查点，人工中断挂起在第二条时间线上。</desc>
+        <defs>
+          <marker id="f4-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <text x="40" y="200" class="ax">APPEND-ONLY · ORDER IS TIME</text>
+
+        <!-- journal rail -->
+        <text x="80" y="306" class="ax">JOURNAL</text>
+        <line x1="80" y1="280" x2="1200" y2="280" stroke="#2d3142" stroke-width="1.5" marker-end="url(#f4-arrow)"/>
+
+        <line x1="140" y1="254" x2="140" y2="274" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="140" cy="280" r="4" fill="#2d3142"/>
+        <text x="140" y="248" class="nm" text-anchor="middle">run_started</text>
+        <text x="140" y="230" class="sb" text-anchor="middle">tools · skill snapshot</text>
+
+        <line x1="400" y1="286" x2="400" y2="302" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="400" cy="280" r="4" fill="#2d3142"/>
+        <text x="400" y="316" class="nm" text-anchor="middle">effect_begin</text>
+        <text x="400" y="332" class="sb" text-anchor="middle">id · type · summary</text>
+
+        <line x1="640" y1="254" x2="640" y2="274" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="640" cy="280" r="4" fill="#2d3142"/>
+        <text x="640" y="248" class="nm" text-anchor="middle">effect_settled</text>
+        <text x="640" y="230" class="sb" text-anchor="middle">result · usage · span</text>
+
+        <line x1="880" y1="254" x2="880" y2="272" stroke="#bf4520" stroke-width="1"/>
+        <circle cx="880" cy="280" r="6" fill="#bf4520"/>
+        <text x="880" y="248" class="nm" text-anchor="middle" font-weight="700">checkpoint</text>
+        <text x="880" y="230" class="sb" text-anchor="middle">snapshot · cursor</text>
+
+        <line x1="1140" y1="286" x2="1140" y2="302" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="1140" cy="280" r="4" fill="#2d3142"/>
+        <text x="1140" y="316" class="nm" text-anchor="middle">run_finished</text>
+        <text x="1140" y="332" class="sb" text-anchor="middle">output · error</text>
+
+        <!-- human rail -->
+        <text x="400" y="442" class="ax">HUMAN</text>
+        <line x1="460" y1="460" x2="820" y2="460" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
+        <rect x="612" y="440" width="56" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="640" y="450" class="al" text-anchor="middle">SUSPENDED</text>
+
+        <circle cx="460" cy="460" r="4" fill="#2d3142"/>
+        <text x="460" y="488" class="nm" text-anchor="middle">human_requested</text>
+        <text x="460" y="504" class="sb" text-anchor="middle">gate · scope · options</text>
+
+        <circle cx="820" cy="460" r="4" fill="#2d3142"/>
+        <text x="820" y="488" class="nm" text-anchor="middle">human_answered</text>
+        <text x="820" y="504" class="sb" text-anchor="middle">decision · reason</text>
+
+        <text x="80" y="560" class="ch">事件顺序示意，未按真实时间等距。节点行（node_started → node_finished）与上表同形，从略。</text>
+        <text x="80" y="584" class="ch">回放缺记录必须报错，绝不静默调外部服务。检查点写入中遇到半条记录则丢弃，回到上一个检查点。</text>
+
+        <!-- legend -->
+        <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <text x="40" y="686" class="ax">LEGEND</text>
+        <circle cx="128" cy="681" r="4" fill="#2d3142"/>
+        <text x="142" y="685" class="al">event</text>
+        <circle cx="214" cy="681" r="6" fill="#bf4520"/>
+        <text x="228" y="685" class="al">checkpoint · snapshot+cursor</text>
+        <line x1="424" y1="681" x2="454" y2="681" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="462" y="685" class="al">suspend span</text>
+      </svg>
+    </div>
+    <p class="caption">
+      恢复语义是至少一次加幂等：跨进程做不到恰好一次，所以复杂度放在工具边界（幂等键、副作用等级、人工兜底），而不是全局事务。
+      settled 之后崩溃则重放直接用结果，不重调。在途 effect 三分：重试、失败、转人工。
+    </p>
+    <div class="table-wrap">
+      <table>
+        <caption>表 1 · 恢复流程：崩溃后任意 worker 接管，单写者租约（§7.2）</caption>
+        <tr><th>步骤</th><th>动作</th></tr>
+        <tr><td>1</td><td>找最新检查点，没有就从空状态开始</td></tr>
+        <tr><td>2</td><td>加载快照，重建工作流状态和 run 状态机</td></tr>
+        <tr><td>3</td><td>重放游标之后的日志，补齐状态</td></tr>
+        <tr><td>4</td><td>在途 effect 三分：有结果直接用，无结果按工具类别重试、失败或转人工</td></tr>
+        <tr><td>5</td><td>未完成人工 effect：只有 requested 保持挂起，有 answered 应用决策继续</td></tr>
+        <tr><td>6</td><td>从当前节点或当前 turn 继续</td></tr>
+      </table>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>表 2 · 失败矩阵：崩溃位置决定恢复动作（§7.3，摘录）</caption>
+        <tr><th>崩溃位置</th><th>日志状态</th><th>恢复动作</th><th>风险</th></tr>
+        <tr><td>effect_begin 之前</td><td>无记录</td><td>重跑节点</td><td>无</td></tr>
+        <tr><td>副作用进行中</td><td>有开始无结果</td><td>按类别处理</td><td>可能重复副作用</td></tr>
+        <tr><td>settled 之后、检查点之前</td><td>有结果</td><td>重放直接使用</td><td>无</td></tr>
+        <tr><td>human_requested 之后</td><td>有请求无决策</td><td>保持挂起</td><td>无</td></tr>
+        <tr class="hot"><td>检查点写入中</td><td>可能半条记录</td><td>拒绝半条，回上一个检查点</td><td>回退一个节点</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== observability ===================== -->
+  <section>
+    <p class="eyebrow">§8 · observe</p>
+    <h2>可观测：三个平面，一条关联链</h2>
+    <p class="section-note">
+      指标不是独立采集的，而是从 effect 事件和 journal 事件投影出来。独立采集会产生第二套事实，和 journal 对不上。
+      默认只记元数据，正文显式开启加脱敏。打点位置：L4（run 状态）、L3（节点）、L1（模型前后与工具前后）、重试、人工门、检查点。
+    </p>
+    <div class="table-wrap">
+      <table>
+        <caption>表 3 · 三个平面的分工</caption>
+        <tr><th>平面</th><th>内容</th><th>保留</th><th>回答</th></tr>
+        <tr><td>Trace</td><td>span 树、耗时、接口状态、错误</td><td>短到中，头部采样，错误全留</td><td>这次调用慢在哪、错在哪</td></tr>
+        <tr><td>Metrics</td><td>五组：用量、调用次数、接口状态、工具执行、持久化健康</td><td>长，聚合</td><td>花了多少、调了多少次、外部服务是否健康</td></tr>
+        <tr><td>Journal</td><td>业务事实，可回放</td><td>按合规，不采样</td><td>到底发生了什么、能否重建</td></tr>
+      </table>
+    </div>
+    <div class="chain">workflow_run_id → node_id → agent_run_id → turn → effect_id → provider_request_id</div>
+    <p class="caption">
+      工具状态十种：invoked、succeeded、failed、refused、denied、skipped、invalid_args、timeout、cancelled、
+      uncertain（恢复时无法判断是否已执行）。refused 与 denied 是策略行为，不是错误，不混进失败率。
+    </p>
+  </section>
+
+  <!-- ===================== modules ===================== -->
+  <section>
+    <p class="eyebrow">§9–§10 · modules</p>
+    <h2>模块划分与演进</h2>
+    <div class="table-wrap">
+      <table>
+        <caption>表 4 · 模块与层一一对应</caption>
+        <tr><th>模块</th><th>层</th><th>职责</th><th>mini-rig 起点</th></tr>
+        <tr><td>your-core</td><td>L0</td><td>复用 rig 类型；run、node、journal、工作流描述的稳定类型</td><td>types.rs 扩 run 状态加记录</td></tr>
+        <tr><td>your-call</td><td>L1</td><td>Effect 调度；模型、工具、MCP、skill、人工</td><td>wire.rs 加 driver.rs 保留，Engine::execute 归一</td></tr>
+        <tr><td>your-exec</td><td>L2</td><td>执行单元；停止、预算、压缩、转向；工具门、模型门</td><td>agent.rs 加 effect.rs 收敛为一种单元</td></tr>
+        <tr><td>your-graph</td><td>L3</td><td>校验、解释器、分支并行、子图、节点门</td><td>新建（M3）</td></tr>
+        <tr><td>your-app</td><td>L4</td><td>五个入口：创建、run agent、run workflow、resume、subscribe</td><td>新建（M0 骨架）</td></tr>
+        <tr class="hot"><td>your-persist</td><td>横切</td><td>Journal、Checkpoint、Replay、Session、中断记录</td><td>新建（M0 内存到 M1 文件）</td></tr>
+        <tr class="hot"><td>your-observe</td><td>横切</td><td>Trace、指标、关联 id、导出</td><td>新建（M5；M0 先结构化事件）</td></tr>
+      </table>
+    </div>
+    <div class="pills">
+      <span class="pill">M0 单次加内存 journal</span><span class="pill">M1 文件加录制回放</span><span class="pill">M2 MCP/skill/工具门</span><span class="pill">M3 图 v1 加节点门</span><span class="pill">M4 自主循环加模型门</span><span class="pill">M5 五组指标</span><span class="pill">M6 生产化</span>
+    </div>
+    <p class="caption">
+      重构第一刀（M0）：不动 wire、driver、providers；把 agent::run 与 Engine 收敛为同一种执行单元；
+      在 commit 处先写 journal 再产生可见效果。每阶段验收都是行为验收：崩溃后恢复结果一致、回放不触外部、trace 与看板与日志对得上。
+    </p>
+  </section>
+
+  <!-- ===================== invariants ===================== -->
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">§14 · i1</p>
+      <div class="card-header"><span class="card-dot coral"></span><h3>所有外部交互都是 effect</h3></div>
+      <p>都可序列化，否则无法录制、回放、恢复。</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">§14 · i2</p>
+      <div class="card-header"><span class="card-dot ink"></span><h3>所有执行事实先写 journal</h3></div>
+      <p>否则崩溃后无法知道发生了什么。</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">§14 · i3</p>
+      <div class="card-header"><span class="card-dot muted"></span><h3>图是数据，执行器是解释器</h3></div>
+      <p>否则流程不可存、不可校验、不可迁移。</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">§14 · i4</p>
+      <div class="card-header"><span class="card-dot ink"></span><h3>上层只组合下层</h3></div>
+      <p>不反向依赖，否则分层退化成互相调用。</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">§14 · i5</p>
+      <div class="card-header"><span class="card-dot muted"></span><h3>观测是 journal 的投影</h3></div>
+      <p>否则出现两套互相矛盾的事实。</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">§14 · i6</p>
+      <div class="card-header"><span class="card-dot coral"></span><h3>人工介入是持久化中断</h3></div>
+      <p>不是内存回调，否则审批不能跨进程、不能恢复。</p>
+    </div>
+  </div>
+
+  <footer>来源：docs/rig-transformation-plan.md §3–§10 · mini-rig src/agent.rs、src/effect.rs、src/driver.rs、src/wire.rs · 六条不变量见 §14。</footer>
+</div>
+</body>
+</html>
