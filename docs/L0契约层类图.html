@@ -39,7 +39,7 @@
     <p class="eyebrow">UML class · Rig L0</p>
     <h1>Rig L0 契约层 · UML 类图</h1>
     <p class="lede">L0 是 Rig 可序列化、无 IO 的契约层：消息与会话是数据，Operation 与 Wire 是纯函数契约，Tool 是行为契约。两张图共 10 个类，重复实现（40 余个 wire、十余个 transport、十余个向量库后端）一律收拢为省略号，只展开代表行为的那一份。</p>
-    <p class="series-nav">本系列：<strong>L0 契约</strong> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="横切面类图.html">横切面</a></p>
+    <p class="series-nav">本系列：<strong>L0 契约</strong> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="L6横切面类图.html">横切面</a> · <a href="全量UML总览.html">总览</a></p>
     <section>
       <h2>L0-1 · 调用契约：一次调用经过谁</h2>
       <p class="section-note">Wire 绑定一种 Operation；Completion 操作把 Request 绑定为 CompletionRequest、Response 绑定为 CompletionResponse。请求带走消息与工具定义，回复带回内容块与用量。</p>

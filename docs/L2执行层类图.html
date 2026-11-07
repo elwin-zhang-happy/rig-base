@@ -39,7 +39,7 @@
     <p class="eyebrow">UML class · Rig L2</p>
     <h1>Rig L2 执行层 · UML 类图</h1>
     <p class="lede">L2 回答一个执行单元如何推进：Agent 装配默认，AgentRunner 驾驶无 IO 的 AgentRun 状态机，TurnPolicy 按轮落门，AgentHook 在一组 on_ 回调点上转向。两张图 11 个类，全部住在 rig-agent。</p>
-    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <strong>L2 执行</strong> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="横切面类图.html">横切面</a></p>
+    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <strong>L2 执行</strong> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="L6横切面类图.html">横切面</a> · <a href="全量UML总览.html">总览</a></p>
     <section>
       <h2>L2-1 · 推进链：装配、启动、驾驶、转向</h2>
       <p class="section-note">AgentBuilder 一次性装配模型、工具与路由；Agent 每次 prompt 产出一个 AgentRunner；Runner 叠加 per-run 覆盖，沿同一条驱动循环推进；AgentHook 只看只改，不拥有状态。</p>

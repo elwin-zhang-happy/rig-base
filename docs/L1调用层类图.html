@@ -39,7 +39,7 @@
     <p class="eyebrow">UML class · Rig L1</p>
     <h1>Rig L1 调用层 · UML 类图</h1>
     <p class="lede">L1 回答一次外部交互如何完成：模型侧由 Model 把 wire 与 transport 配成一对，经 call 或 stream 打开回复；工具侧以 EffectKind 为统一的交互内容，经 ToolServer 注册与执行；MCP 与人工介入是两条入适配。两张图 9 个类，另有两个跨页引用（Wire、Tool，虚线框，详见 L0）。</p>
-    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <strong>L1 调用</strong> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="横切面类图.html">横切面</a></p>
+    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <strong>L1 调用</strong> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="L6横切面类图.html">横切面</a> · <a href="全量UML总览.html">总览</a></p>
     <section>
       <h2>L1-1 · 模型调用：配对、搬运、擦除</h2>
       <p class="section-note">Model 的两个公有字段就是一次配对：wire 管发什么，transport 管怎么走。DynModel 把两者擦除到只剩操作；Streamed 是一次已打开的回复，finish 把它折成 Response。</p>

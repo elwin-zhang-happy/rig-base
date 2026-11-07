@@ -39,7 +39,7 @@
     <p class="eyebrow">UML class · Rig L5</p>
     <h1>Rig L5 宿主层 · UML 类图</h1>
     <p class="lede">L5 回答谁发起、谁消费：发起是 rig launcher 二进制（读布局、认会话、传参数），消费只有终端、headless stdio、编辑器桥三面，加一种库嵌入。两张图 11 个类，另有一个跨页引用（Agent，详见 L4-1）。</p>
-    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <strong>L5 宿主</strong> · <a href="横切面类图.html">横切面</a></p>
+    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <strong>L5 宿主</strong> · <a href="L6横切面类图.html">横切面</a> · <a href="全量UML总览.html">总览</a></p>
     <section>
       <h2>L5-1 · 启动：launcher 如何开一次 run</h2>
       <p class="section-note">run 是 rig 二进制的入口循环：读 Home 布局，认领 session，把 Invocation 交给 agent 一侧；AgentDescription 是插件上报的 CLI 形状，launcher 照着它认命令。</p>

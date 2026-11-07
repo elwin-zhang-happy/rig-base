@@ -15,8 +15,8 @@
 | 3d | [L3编排层类图.html](L3编排层类图.html) | L3 编排层类图 | 多执行单元组合：Spawner/ForkAgent、Deliver、七阶段 AgentPass 泵 Effect |
 | 3e | [L4应用层类图.html](L4应用层类图.html) | L4 应用层类图 | 用例生命周期：prompt 启动、resume 恢复、事件流观察、handler 服务边界 |
 | 3f | [L5宿主层类图.html](L5宿主层类图.html) | L5 宿主层类图 | 发起与消费：launcher 二进制，终端/headless/编辑器桥三面消费 |
-| 3g | [横切面类图.html](横切面类图.html) | 横切面类图 | 持久化面与可观测面：会话/effect 日志、用量 span、Witness 轨迹 |
-| 3h | [全量UML总览.html](全量UML总览.html) | 全量 UML 总览 | D0–D9：平台分层、单次调用、Agent 运行、ECS 循环、Effect 调度、Tool 调用、spawn/fork/retry、Harness 插件、向量记忆、Provider 方言 |
+| 3g | [L6横切面类图.html](L6横切面类图.html) | L6 横切面类图 | 持久化面与可观测面：会话/effect 日志、用量 span、Witness 轨迹 |
+| 3h | [全量UML总览.html](全量UML总览.html) | 全量 UML 总览 | S0–S7：分层穿线总图加 L0–L5 与横切面每层一张摘要 |
 | 4 | [设计解剖.html](设计解剖.html) | 设计解剖 | 理解决策：变化速率主轴、两条执行路径、厂商归一化、代价清单、判断规则 |
 
 ## 动手：怎么用、怎么扩

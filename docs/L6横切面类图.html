@@ -39,7 +39,7 @@
     <p class="eyebrow">UML class · Rig planes</p>
     <h1>Rig 横切面 · UML 类图</h1>
     <p class="lede">横切面不是层：持久化面与可观测面被各层调用，但只依赖 L0。持久化记住发生过什么（会话日志与 effect 日志两套），观测回答正在发生什么（用量记进 span，轨迹走 Witness）。三张图 12 个类，另有一个外部引用（tracing::Span）。</p>
-    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <strong>横切面</strong></p>
+    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <strong>横切面</strong> · <a href="全量UML总览.html">总览</a></p>
     <section>
       <h2>P-1 · 会话面：日志是事实，会话是回放出来的像</h2>
       <p class="section-note">Store 是追加写后端，有 DirStore 与 MemoryStore 两种实现；Session 经 read 读出、经 save 写回；SessionStore 与 SessionLog 把它们绑进 ECS。</p>
