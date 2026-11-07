@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rig L0 契约层 · UML 类图</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper: #f5f5f5;
+      --color-panel: #ffffff;
+      --color-ink: #2d3142;
+      --color-muted: #4f5d75;
+      --color-accent: #bf4520;
+      --color-rule: rgba(45,49,66,0.12);
+    }
+    body { font-family: 'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif; background: var(--color-paper); color: var(--color-ink); padding: 3rem 1rem 4rem; }
+    .frame { max-width: 1360px; margin: 0 auto; }
+    .eyebrow { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(1.6rem, 2.6vw + 0.8rem, 2.35rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1rem; }
+    .lede { color: var(--color-muted); font-size: 0.94rem; line-height: 1.7; max-width: 54rem; }
+    section { margin-top: 3.5rem; }
+    h2 { font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: 1.35rem; font-weight: 400; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+    .section-note { color: var(--color-muted); font-size: 0.88rem; line-height: 1.65; max-width: 54rem; margin-bottom: 1.25rem; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .diagram-container > svg { width: 100%; min-width: 1280px; display: block; }
+    svg text { font-variant-numeric: tabular-nums; }
+    .caption { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.7rem; line-height: 1.75; color: var(--color-muted); margin-top: 0.85rem; max-width: 64rem; }
+    footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--color-rule); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.7rem; color: var(--color-muted); }
+    @media print { .diagram-container { overflow-x: visible; } .diagram-container > svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">UML class · Rig L0</p>
+    <h1>Rig L0 契约层 · UML 类图</h1>
+    <p class="lede">L0 是 Rig 可序列化、无 IO 的契约层：消息与会话是数据，Operation 与 Wire 是纯函数契约，Tool 是行为契约。两张图共 10 个类，重复实现（40 余个 wire、十余个 transport、十余个向量库后端）一律收拢为省略号，只展开代表行为的那一份。</p>
+    <section>
+      <h2>L0-1 · 调用契约：一次调用经过谁</h2>
+      <p class="section-note">Wire 绑定一种 Operation；Completion 操作把 Request 绑定为 CompletionRequest、Response 绑定为 CompletionResponse。请求带走消息与工具定义，回复带回内容块与用量。</p>
+      <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="l0a-title l0a-desc">
+        <title id="l0a-title">Rig L0 调用契约类图</title>
+        <desc id="l0a-desc">Class diagram showing Wire binding an Operation, Completion binding request and response types, a request holding messages, and a response answering a request.</desc>
+        <defs>
+          <marker id="l0a-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l0a-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#2d3142"/></marker>
+          <marker id="l0a-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l0a-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#4f5d75" stroke-width="1"/></marker>
+        </defs>
+        <rect width="1280" height="720" fill="#f5f5f5"/>
+        <path d="M 300,250 V 130 Q 300,122 308,122 H 470" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#l0a-open)"/>
+        <line x1="495" y1="224" x2="495" y2="470" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l0a-open)"/>
+        <line x1="785" y1="224" x2="785" y2="470" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l0a-open)"/>
+        <path d="M 520,620 H 1142 Q 1150,620 1150,612 V 370" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#l0a-open)"/>
+        <rect x="310" y="178" width="44" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="332" y="188" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BINDS</text>
+        <rect x="505" y="340" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="531" y="350" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REQUEST</text>
+        <rect x="797" y="330" width="58" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="826" y="340" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RESPONSE</text>
+        <rect x="674" y="613" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="698" y="623" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HOLDS</text>
+        <rect x="442" y="116" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="450" y="126" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="282" y="226" width="36" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="300" y="236" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">0..*</text>
+        <rect x="532" y="613" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="540" y="623" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="1132" y="382" width="36" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="1150" y="392" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1..*</text>
+        <rect x="470" y="28" width="340" height="196" rx="6" fill="rgba(191,69,32,0.04)" stroke="#bf4520" stroke-width="1"/>
+        <rect x="470" y="28" width="340" height="40" rx="6" fill="rgba(191,69,32,0.10)"/>
+        <rect x="470" y="60" width="340" height="8" fill="rgba(191,69,32,0.10)"/>
+        <line x1="470" y1="68" x2="810" y2="68" stroke="rgba(191,69,32,0.40)" stroke-width="1"/>
+        <text x="640" y="44" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«interface»</text>
+        <text x="640" y="60" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Operation</text>
+        <text x="486" y="88" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Request</text>
+        <text x="486" y="108" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Event / type End</text>
+        <text x="486" y="128" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Response</text>
+        <text x="486" y="148" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Fold / type Emit</text>
+        <text x="486" y="168" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="470" y1="176" x2="810" y2="176" stroke="rgba(191,69,32,0.40)" stroke-width="1"/>
+        <text x="486" y="192" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ prepare(req, wire): Request</text>
+        <text x="486" y="212" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ fold(req, call): Fold</text>
+        <rect x="60" y="250" width="320" height="216" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="290" x2="380" y2="290" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="220" y="266" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«interface»</text>
+        <text x="220" y="282" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Wire</text>
+        <text x="76" y="310" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Op: Operation</text>
+        <text x="76" y="330" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Payload / Frame</text>
+        <text x="76" y="350" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Event</text>
+        <text x="76" y="370" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Decoder&lt;'id&gt;</text>
+        <text x="76" y="390" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="60" y1="398" x2="380" y2="398" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="414" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ describe(): Descriptor</text>
+        <text x="76" y="434" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ encode(req, mode): Payload</text>
+        <text x="76" y="454" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ decoder(): Decoder</text>
+        <rect x="900" y="250" width="300" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="900" y1="290" x2="1200" y2="290" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1050" y="266" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«enum»</text>
+        <text x="1050" y="282" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Message</text>
+        <text x="916" y="310" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">System { content }</text>
+        <text x="916" y="330" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">User { content }</text>
+        <text x="916" y="350" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Assistant { blocks }</text>
+        <rect x="180" y="470" width="340" height="176" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="180" y1="510" x2="520" y2="510" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="350" y="502" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">CompletionRequest</text>
+        <text x="196" y="530" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">chat_history: Vec&lt;Arc&lt;Message&gt;&gt;</text>
+        <text x="196" y="550" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">tools: Vec&lt;ToolDefinition&gt;</text>
+        <text x="196" y="570" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">documents: Vec&lt;Document&gt;</text>
+        <text x="196" y="590" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">options: GenerationOptions</text>
+        <text x="196" y="610" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="180" y1="618" x2="520" y2="618" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="196" y="634" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ new(prompt): Self</text>
+        <rect x="760" y="470" width="320" height="132" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="760" y1="510" x2="1080" y2="510" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="920" y="502" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">CompletionResponse</text>
+        <text x="776" y="530" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">choice: Vec&lt;AssistantContent&gt;</text>
+        <text x="776" y="550" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">usage: Usage</text>
+        <text x="776" y="570" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">raw: Value</text>
+        <text x="776" y="590" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="30" y1="660" x2="1250" y2="660" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <line x1="30" y1="688" x2="58" y2="688" stroke="#2d3142" stroke-width="1" marker-end="url(#l0a-triangle)"/>
+        <text x="66" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">INHERITANCE</text>
+        <line x1="190" y1="688" x2="218" y2="688" stroke="#2d3142" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l0a-triangle)"/>
+        <text x="226" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">REALIZATION</text>
+        <line x1="370" y1="688" x2="398" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l0a-diamond-filled)"/>
+        <text x="406" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">COMPOSITION</text>
+        <line x1="550" y1="688" x2="578" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l0a-diamond-hollow)"/>
+        <text x="586" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">AGGREGATION</text>
+        <line x1="730" y1="688" x2="758" y2="688" stroke="#4f5d75" stroke-width="1" marker-end="url(#l0a-open)"/>
+        <text x="766" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">ASSOCIATION</text>
+        <line x1="910" y1="688" x2="938" y2="688" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l0a-open)"/>
+        <text x="946" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DEPENDENCY</text>
+      </svg>
+      </div>
+      <p class="caption">读法：Wire 绑定一种 Operation（一对多，一个操作对应 40 余个 wire 实现）；Completion 把 Request 绑定为 CompletionRequest、Response 绑定为 CompletionResponse。收拢未画：Decoder（classify / decode，每个回复一个新的状态机）、Fold（absorb / finish）、Transport 与 Model / DynModel（L1 调用层，下一张图）；Usage 是 CompletionResponse 的一个字段（token 计数与费用），随回复一起返回，不单独成类。</p>
+    </section>
+    <section>
+      <h2>L0-2 · 会话与工具：状态和能力在哪</h2>
+      <p class="section-note">Session 落盘多个 agent 的 Conversation；Conversation 拥有消息；Tool 是行为契约，向量库以 Tool 的形态被调用。</p>
+      <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="l0b-title l0b-desc">
+        <title id="l0b-title">Rig L0 会话与工具类图</title>
+        <desc id="l0b-desc">Class diagram showing Session composed of Conversations, Conversation composed of Messages, Tool calls traveling as message blocks, and VectorStoreIndex realized as a Tool.</desc>
+        <defs>
+          <marker id="l0b-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l0b-triangle-accent" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#bf4520" stroke-width="1"/></marker>
+          <marker id="l0b-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#2d3142"/></marker>
+          <marker id="l0b-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l0b-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#4f5d75" stroke-width="1"/></marker>
+        </defs>
+        <rect width="1280" height="720" fill="#f5f5f5"/>
+        <line x1="890" y1="70" x2="390" y2="70" stroke="#4f5d75" stroke-width="1" marker-end="url(#l0b-diamond-filled)"/>
+        <line x1="890" y1="168" x2="790" y2="168" stroke="#4f5d75" stroke-width="1" marker-start="url(#l0b-diamond-filled)"/>
+        <line x1="850" y1="450" x2="430" y2="450" stroke="#bf4520" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l0b-triangle-accent)"/>
+        <path d="M 410,380 V 158 Q 410,150 418,150 H 490" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l0b-open)"/>
+        <rect x="612" y="430" width="56" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="640" y="440" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BLANKET</text>
+        <rect x="420" y="250" width="64" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="452" y="260" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CALLS AS</text>
+        <rect x="862" y="64" width="36" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="880" y="74" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">0..*</text>
+        <rect x="402" y="64" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="410" y="74" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="862" y="162" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="870" y="172" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="802" y="162" width="36" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="820" y="172" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1..*</text>
+        <rect x="90" y="60" width="300" height="156" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="90" y1="100" x2="390" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="240" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Session</text>
+        <text x="106" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">agents: Vec&lt;SavedAgent&gt;</text>
+        <text x="106" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">saved: Map&lt;String, Value&gt;</text>
+        <text x="106" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="90" y1="168" x2="390" y2="168" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="106" y="184" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ read(store): Session</text>
+        <text x="106" y="204" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ save(&amp;mut self, store)</text>
+        <rect x="490" y="80" width="300" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="490" y1="120" x2="790" y2="120" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="640" y="96" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«enum»</text>
+        <text x="640" y="112" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Message</text>
+        <text x="506" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">System { content }</text>
+        <text x="506" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">User { content }</text>
+        <text x="506" y="180" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Assistant { blocks }</text>
+        <rect x="890" y="60" width="300" height="156" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="890" y1="100" x2="1190" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1040" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Conversation</text>
+        <text x="906" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">messages: Vec&lt;Arc&lt;Message&gt;&gt;</text>
+        <text x="906" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">meta: Vec&lt;Meta&gt;</text>
+        <text x="906" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="890" y1="168" x2="1190" y2="168" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="906" y="184" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ messages(): &amp;[…]</text>
+        <text x="906" y="204" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ new(msg): Self</text>
+        <rect x="90" y="380" width="340" height="156" rx="6" fill="rgba(191,69,32,0.04)" stroke="#bf4520" stroke-width="1"/>
+        <rect x="90" y="380" width="340" height="40" rx="6" fill="rgba(191,69,32,0.10)"/>
+        <rect x="90" y="412" width="340" height="8" fill="rgba(191,69,32,0.10)"/>
+        <line x1="90" y1="420" x2="430" y2="420" stroke="rgba(191,69,32,0.40)" stroke-width="1"/>
+        <text x="260" y="396" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«interface»</text>
+        <text x="260" y="412" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Tool</text>
+        <text x="106" y="440" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">const NAME: &amp;str</text>
+        <text x="106" y="460" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Args / Output / Error</text>
+        <text x="106" y="480" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="90" y1="488" x2="430" y2="488" stroke="rgba(191,69,32,0.40)" stroke-width="1"/>
+        <text x="106" y="504" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ call(ctx, args): Output</text>
+        <text x="106" y="524" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ description(): String</text>
+        <rect x="850" y="380" width="340" height="136" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="850" y1="420" x2="1190" y2="420" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1020" y="396" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«interface»</text>
+        <text x="1020" y="412" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">VectorStoreIndex</text>
+        <text x="866" y="440" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">type Filter: SearchFilter</text>
+        <text x="866" y="460" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="850" y1="468" x2="1190" y2="468" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="866" y="484" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ top_n(req): Vec&lt;Result&gt;</text>
+        <text x="866" y="504" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ top_n_ids(req): Vec&lt;Id&gt;</text>
+        <line x1="30" y1="660" x2="1250" y2="660" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <line x1="30" y1="688" x2="58" y2="688" stroke="#2d3142" stroke-width="1" marker-end="url(#l0b-triangle)"/>
+        <text x="66" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">INHERITANCE</text>
+        <line x1="190" y1="688" x2="218" y2="688" stroke="#2d3142" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l0b-triangle)"/>
+        <text x="226" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">REALIZATION</text>
+        <line x1="370" y1="688" x2="398" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l0b-diamond-filled)"/>
+        <text x="406" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">COMPOSITION</text>
+        <line x1="550" y1="688" x2="578" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l0b-diamond-hollow)"/>
+        <text x="586" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">AGGREGATION</text>
+        <line x1="730" y1="688" x2="758" y2="688" stroke="#4f5d75" stroke-width="1" marker-end="url(#l0b-open)"/>
+        <text x="766" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">ASSOCIATION</text>
+        <line x1="910" y1="688" x2="938" y2="688" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l0b-open)"/>
+        <text x="946" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DEPENDENCY</text>
+      </svg>
+      </div>
+      <p class="caption">读法：Session 拥有多个 agent 的 Conversation（组合，中间经 SavedAgent 落盘）；Conversation 拥有消息（组合）；工具调用与工具结果以消息块的形式在会话里流转。VectorStoreIndex 被 blanket 实现为 Tool（search_vector_store），十余个向量库后端共用这一条，不必手写工具适配。收拢未画：ToolDefinition（发给模型的名称加 schema）与 ToolContext（工具详图）；SessionStore（日志存取）与 AgentRun（L2 执行，下一张图）。</p>
+    </section>
+    <footer>Rig L0 · UML class · 数字口径：wire 实现数与操作数取自《<a href="调用契约.html">调用契约</a>》的盘点（含测试替身）；类成员与签名取自当前工作树 rig-core / rig-memory。重复实现收拢为省略号，详见各图注。</footer>
+  </div>
+</body>
+</html>

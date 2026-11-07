@@ -1,4 +1,4 @@
-<title>Rig 设计拆解</title>
+<title>设计解剖</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
@@ -75,6 +75,12 @@ section{margin-top:60px}
 .dg .accent-line{stroke:var(--accent);stroke-width:1.6;fill:none}
 .dg .band{fill:var(--surface-2);stroke:none}
 .dg .freq{fill:var(--accent);opacity:.85}
+.dg .mark{fill:var(--accent);stroke:none}
+.dg .mark-t{fill:#fff;font-family:var(--mono);font-size:9px;font-weight:600}
+.src{font-size:12px;color:var(--muted);margin:0 0 1.6em}
+@media (prefers-color-scheme: dark){
+  .dg .mark-t{fill:#1a130b}
+}
 @media (max-width:640px){
   body{font-size:15px}
   .page{padding-block:36px 72px}
@@ -84,9 +90,9 @@ section{margin-top:60px}
 
 <div class="page">
 <header>
-  <div class="eyebrow">Architecture dossier · rig 0.46</div>
-  <h1>Rig 设计拆解</h1>
-  <p class="deck">这套代码的所有分层都服从同一条规则：按变化速率切开，依赖只指向稳定的一端。看懂这条规则，你就能判断每一处改动该落在哪一层；看不懂，就只能照着文件目录猜。</p>
+  <div class="eyebrow">Architecture dossier · Encapsulation walkthrough · rig 0.46</div>
+  <h1>设计解剖</h1>
+  <p class="deck">上半讲 rig 现状为什么这样设计：一条变化速率主轴，五个调用契约，两条执行路径，三家协议家族的归一化。下半讲改造时可以直接用的东西：代价清单、判断规则和你的切割线。调用链路的完整盘点见《<a href="调用契约.html">调用契约</a>》，动手步骤见《<a href="使用指南.html">使用指南</a>》。</p>
 </header>
 
 <nav class="toc" aria-label="目录">
@@ -94,12 +100,18 @@ section{margin-top:60px}
   <a href="#contracts">2 五个契约</a>
   <a href="#seam">3 类型与数据的接缝</a>
   <a href="#effect">4 副作用单一通道</a>
-  <a href="#runtimes">5 两套运行时</a>
+  <a href="#runtimes">5 两条执行路径</a>
   <a href="#stages">6 七阶段</a>
-  <a href="#kernel">7 内核、宿主、插件</a>
-  <a href="#proof">8 契约的证明</a>
-  <a href="#cost">9 代价清单</a>
-  <a href="#rules">10 改造判断规则</a>
+  <a href="#providers">7 厂商差异与共同点</a>
+  <a href="#seams">8 公共与可变的切分</a>
+  <a href="#tests">9 功能测试拆分</a>
+  <a href="#demo">10 封装演示</a>
+  <a href="#extract">11 可抄走的抽象</a>
+  <a href="#kernel">12 内核、宿主、插件</a>
+  <a href="#proof">13 契约的证明</a>
+  <a href="#cost">14 代价清单</a>
+  <a href="#rules">15 改造判断规则</a>
+  <a href="#cut">16 你的切割线</a>
 </nav>
 
 <section id="axis">
@@ -284,6 +296,8 @@ section{margin-top:60px}
   </figure>
 
   <p>关键的一刀是 <strong><code>Decoder</code> 和 <code>Fold</code> 分开</strong>。Decoder 只懂「字节 → 厂商事件」，Fold 只懂「事件加结束 → 归一化响应」。两者拆开之后，流式和整包共享同一套解码与折叠逻辑，录下来的事件流也能直接重放出完整响应。</p>
+
+  <p>完整盘点见《<a href="调用契约.html">调用契约</a>》：契约之间的参数化关系、一次调用的七步路径、方言数据表和全部契约清单。</p>
 </section>
 
 <section id="seam">
@@ -441,11 +455,15 @@ section{margin-top:60px}
     </svg>
     <figcaption>审批、预算、日志、遥测、回放这五件事如果各写各的，就得到处补调用点。Rig 把它们全部收敛成一个消费者接口，副作用只有一条入口和一条出口。你改造时如果要做审计或回放，这一层不要绕开。</figcaption>
   </figure>
+
+  <div class="note stable">
+    <p>这是 rig 现状的 effect 通道。改造目标的七阶段形态（门、挂起、journal）见《<a href="控制平面架构.html">控制平面架构</a>》图 3。</p>
+  </div>
 </section>
 
 <section id="runtimes">
-  <h2>5 两套运行时，各自回答一个问题</h2>
-  <p>很多人以为 <code>rig-agent</code> 和 <code>rig-ecs</code> 是新旧替代关系。不是。它们回答的是不同的问题：调用方是否需要在执行过程中介入。</p>
+  <h2>5 两条执行路径</h2>
+  <p>很多人以为 <code>rig-agent</code> 和 <code>rig-ecs</code> 是新旧替代关系。不是。它们回答的是不同的问题：调用方是否需要在执行过程中介入。下面先一眼对比，再逐条展开。</p>
 
   <figure>
     <svg class="dg" viewBox="0 0 900 448" role="img" aria-label="对比 sans-I/O 状态机与 ECS 帧循环，前者调用方拥有循环，后者内核拥有循环">
@@ -515,6 +533,175 @@ section{margin-top:60px}
   <div class="note">
     <p><code>AgentRun</code> 最容易被低估的一点：它在工具调用挂起时<strong>整个状态可序列化</strong>。存下来，换一个进程恢复，待执行的工具调用会从自己的状态里重新发出。需要人工审批的流程可以直接建立在这个性质上。</p>
   </div>
+
+  <h3>5.1 库路径：<code>rig-agent</code> 的 run 循环</h3>
+  <p>构造和执行是分开的。<code>AgentBuilder</code> 产出不可变的 <code>Agent</code>；每次 <code>prompt</code> 产出一个 <code>AgentRunner</code>，它再驱动一个纯状态机 <code>AgentRun</code>。状态机只决定下一步做什么，IO 由驱动层完成。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 520" role="img" aria-label="agent run 循环：状态机给出下一步，驱动层执行模型调用和工具调用，钩子在六个位置介入">
+      <defs>
+        <marker id="f1-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="neutral" x="60" y="36" width="230" height="46" rx="8"/>
+        <text x="175" y="64" class="t-mono" text-anchor="middle">AgentBuilder → Agent</text>
+      </g>
+      <line class="line" x1="175" y1="82" x2="175" y2="98" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="neutral" x="60" y="104" width="230" height="46" rx="8"/>
+        <text x="175" y="132" class="t-mono" text-anchor="middle">AgentRunner（一次 run）</text>
+      </g>
+      <line class="line" x1="175" y1="150" x2="175" y2="166" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="type" x="60" y="172" width="230" height="46" rx="8"/>
+        <text x="175" y="200" class="t-mono" text-anchor="middle">AgentRun（sans-I/O）</text>
+      </g>
+
+      <line class="line" x1="290" y1="195" x2="352" y2="195" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="plain" x="360" y="172" width="250" height="46" rx="8"/>
+        <text x="485" y="200" class="t-mono" text-anchor="middle">next_step → CallModel</text>
+      </g>
+
+      <line class="line" x1="485" y1="218" x2="485" y2="240" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="data" x="360" y="246" width="250" height="64" rx="8"/>
+        <text x="485" y="272" class="t-mono" text-anchor="middle">Provider 调用</text>
+        <text x="485" y="294" class="t-sm" text-anchor="middle">prepare → encode → send → decode → fold</text>
+      </g>
+
+      <line class="line" x1="485" y1="310" x2="485" y2="330" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="type" x="360" y="336" width="250" height="52" rx="8"/>
+        <text x="485" y="359" class="t-sm" text-anchor="middle">这一轮有工具调用吗？</text>
+        <text x="485" y="377" class="t-xs" text-anchor="middle">有：CallTools　没有：Done</text>
+      </g>
+
+      <line class="line" x1="610" y1="362" x2="652" y2="362" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="plain" x="660" y="336" width="200" height="52" rx="8"/>
+        <text x="760" y="359" class="t-mono" text-anchor="middle">CallTools</text>
+        <text x="760" y="377" class="t-xs" text-anchor="middle">按顺序或并行执行</text>
+      </g>
+
+      <path class="line" d="M860 362 L880 362 L880 150 L560 150 L560 166" marker-end="url(#f1-arrow)"/>
+      <text x="700" y="142" class="t-xs" text-anchor="middle">工具结果回填后发起下一轮</text>
+
+      <line class="line" x1="485" y1="388" x2="485" y2="424" marker-end="url(#f1-arrow)"/>
+      <g>
+        <rect class="data" x="360" y="430" width="250" height="52" rx="8"/>
+        <text x="485" y="453" class="t-mono" text-anchor="middle">Done(PromptResponse)</text>
+        <text x="485" y="471" class="t-xs" text-anchor="middle">输出、用量、每次调用的记录</text>
+      </g>
+
+      <circle class="mark" cx="352" cy="195" r="9"/>
+      <text class="mark-t" x="352" y="198" text-anchor="middle">1</text>
+      <circle class="mark" cx="360" cy="256" r="9"/>
+      <text class="mark-t" x="360" y="259" text-anchor="middle">2</text>
+      <circle class="mark" cx="600" cy="256" r="9"/>
+      <text class="mark-t" x="600" y="259" text-anchor="middle">3</text>
+      <circle class="mark" cx="600" cy="340" r="9"/>
+      <text class="mark-t" x="600" y="343" text-anchor="middle">4</text>
+      <circle class="mark" cx="650" cy="388" r="9"/>
+      <text class="mark-t" x="650" y="391" text-anchor="middle">5</text>
+      <circle class="mark" cx="600" cy="456" r="9"/>
+      <text class="mark-t" x="600" y="459" text-anchor="middle">6</text>
+    </svg>
+    <figcaption>状态机只产出三种步骤：<code>CallModel { prompt, history, turn }</code>、<code>CallTools { calls }</code>、<code>Done(PromptResponse)</code>。驱动层把模型调用和工具执行做完，再把结果喂回状态机。六个编号是钩子的介入位置，见下表。</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>编号</th><th>钩子</th><th>在哪一步</th><th>能做什么</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>on_run_start</code></td><td>第一次模型调用前</td><td>改写提示词，或在发出任何请求前终止</td></tr>
+        <tr><td>2</td><td><code>on_model_select</code></td><td>每次 <code>CallModel</code> 前</td><td>在已构造的模型之间选择；不能做阻塞 IO</td></tr>
+        <tr><td>3</td><td><code>on_completion_call</code></td><td>请求编码前</td><td>返回请求补丁，或终止</td></tr>
+        <tr><td>4</td><td><code>on_model_turn_finished</code></td><td>模型回合结束后</td><td>接受、重试（无工具回合）、终止</td></tr>
+        <tr><td>5</td><td><code>on_dispatch</code> / <code>on_outcome</code></td><td>工具调用前后</td><td>观察、改参数、拒绝、改写结果</td></tr>
+        <tr><td>6</td><td><code>on_run_settled</code></td><td>结束后</td><td>只观察，不能再调度工作</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>5.2 内核路径：<code>rig-ecs</code> 的实体与阶段</h3>
+  <p>同一条请求在 ECS 里不是一个循环，而是一组实体：消息、回合、模型调用、工具调用各自是实体，每个实体在固定阶段里推进。你可以在任意阶段插一个普通 system 去观察、拦截或改写。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 420" role="img" aria-label="ECS 路径：消息生成回合，回合的模型调用和工具调用是 effect 实体，结果回填后发起下一轮">
+      <defs>
+        <marker id="f2-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="plain" x="20" y="84" width="140" height="64" rx="8"/>
+        <text x="90" y="111" class="t-sm" text-anchor="middle">用户消息</text>
+        <text x="90" y="129" class="t-mono-sm" text-anchor="middle">Deliver</text>
+      </g>
+      <line class="line" x1="160" y1="116" x2="182" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="plain" x="190" y="84" width="140" height="64" rx="8"/>
+        <text x="260" y="111" class="t-sm" text-anchor="middle">回合实体</text>
+        <text x="260" y="129" class="t-mono-sm" text-anchor="middle">TurnOf(agent)</text>
+      </g>
+      <line class="line" x1="330" y1="116" x2="352" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="type" x="360" y="84" width="170" height="64" rx="8"/>
+        <text x="445" y="111" class="t-mono" text-anchor="middle">TurnCall</text>
+        <text x="445" y="129" class="t-xs" text-anchor="middle">模型调用 effect</text>
+      </g>
+      <line class="line" x1="530" y1="116" x2="552" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="data" x="560" y="84" width="150" height="64" rx="8"/>
+        <text x="635" y="111" class="t-mono" text-anchor="middle">Provider</text>
+        <text x="635" y="129" class="t-xs" text-anchor="middle">同一条编解码管线</text>
+      </g>
+      <line class="line" x1="710" y1="116" x2="732" y2="116" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="plain" x="740" y="84" width="140" height="64" rx="8"/>
+        <text x="810" y="111" class="t-sm" text-anchor="middle">工具调用</text>
+        <text x="810" y="129" class="t-mono-sm" text-anchor="middle">ToolRequest</text>
+      </g>
+
+      <text x="445" y="166" class="t-xs" text-anchor="middle">Admit → Prepare → Gate → Start</text>
+      <text x="810" y="166" class="t-xs" text-anchor="middle">Footprint 决定并行或等待</text>
+
+      <path class="line" d="M810 84 L810 42 L445 42 L445 76" marker-end="url(#f2-arrow)"/>
+      <text x="627" y="34" class="t-xs" text-anchor="middle">结果按调用顺序回填，发起下一轮</text>
+
+      <line class="line" x1="445" y1="178" x2="445" y2="238" marker-end="url(#f2-arrow)"/>
+      <text x="455" y="196" class="t-xs">没有工具调用</text>
+
+      <g>
+        <rect class="data" x="360" y="246" width="170" height="56" rx="8"/>
+        <text x="445" y="270" class="t-mono" text-anchor="middle">TurnOutcome</text>
+        <text x="445" y="288" class="t-xs" text-anchor="middle">提案在回合上</text>
+      </g>
+      <line class="line" x1="530" y1="274" x2="552" y2="274" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="plain" x="560" y="246" width="150" height="56" rx="8"/>
+        <text x="635" y="270" class="t-mono" text-anchor="middle">SessionLog</text>
+        <text x="635" y="288" class="t-xs" text-anchor="middle">会话变更</text>
+      </g>
+      <line class="line" x1="710" y1="274" x2="732" y2="274" marker-end="url(#f2-arrow)"/>
+      <g>
+        <rect class="neutral" x="740" y="246" width="140" height="56" rx="8"/>
+        <text x="810" y="270" class="t-mono" text-anchor="middle">Store</text>
+        <text x="810" y="288" class="t-xs" text-anchor="middle">可恢复</text>
+      </g>
+
+      <text x="20" y="360" class="t-sm">失败路径：Arrive 给重试判定 → Review 可改或执行 → Commit 退避重试或结束回合。</text>
+      <text x="20" y="386" class="t-sm">任何插件都可以在自己的阶段用普通 system 介入，不需要改内核。</text>
+    </svg>
+    <figcaption>ECS 路径把「回合」显式化成实体，于是并发工具、单步重试、中途审批、会话恢复都变成对实体的操作，而不是对循环的补丁。库路径把同样的语义压进一个状态机，换取可序列化和可移植。</figcaption>
+  </figure>
+
+  <p>两条路径在模型调用处汇合成一条管线：<code>Operation::prepare</code> 校验请求，<code>Wire::encode</code> 编出请求体，<code>Transport::send</code> 发出去，<code>Decoder</code> 把帧解成事件，<code>Fold</code> 把事件和结束折叠成归一化响应。逐段展开见 <a href="#contracts">§2 五个契约与一次调用</a>；这里只需要记住：<strong>厂商语法只出现在 encode 和 decode 两步，前后都是归一化的。</strong></p>
 </section>
 
 <section id="stages">
@@ -583,10 +770,12 @@ section{margin-top:60px}
   </figure>
 
   <p>这不是回调链。回调链的问题是「谁在什么时候被调用」只能靠读框架源码回答；阶段模型的答案是「你把自己的系统加进哪个阶段」。代价是顺序敏感，所以仓库里有一个 <code>check-stage-order</code> 专门守这件事。</p>
+
+  <p>这是 rig 现状的七阶段。改造目标补齐了 Commit 先写 journal、Gate 可挂起为人工 effect 等语义，见《<a href="控制平面架构.html">控制平面架构</a>》图 3。</p>
 </section>
 
 <section id="kernel">
-  <h2>7 内核、宿主、插件：三层边界</h2>
+  <h2>12 内核、宿主、插件：三层边界</h2>
   <p>这是整个仓库最值得直接搬走的一个决定：<strong>内核不知道视图，也不知道文件系统</strong>。它只定义 agent、effect、阶段、会话日志；存储和模型由宿主注入。因此同一个内核可以跑 TUI、<code>-p</code>、ACP 和纯 library 程序。</p>
 
   <figure>
@@ -632,7 +821,7 @@ section{margin-top:60px}
 </section>
 
 <section id="proof">
-  <h2>8 契约靠消费者证明</h2>
+  <h2>13 契约靠消费者证明</h2>
   <p>文档会过期，注释会撒谎。Rig 的办法是让公共 API 一直有外部消费者，并且让 CI 编译它们。</p>
 
   <figure>
@@ -675,7 +864,7 @@ section{margin-top:60px}
 </section>
 
 <section id="cost">
-  <h2>9 每条拆分付的代价</h2>
+  <h2>14 每条拆分付的代价</h2>
   <p>这套架构不是免费的。改造之前先确认你愿意付哪些账。</p>
 
   <div class="table-wrap">
@@ -695,7 +884,7 @@ section{margin-top:60px}
 </section>
 
 <section id="rules">
-  <h2>10 改造时可以直接用的判断规则</h2>
+  <h2>15 改造时可以直接用的判断规则</h2>
   <p>你以后每加一个东西，先问这五个问题，答案会直接告诉你它该落在哪一层。</p>
 
   <div class="table-wrap">
@@ -719,8 +908,8 @@ section{margin-top:60px}
 <hr class="rule">
 
 <section id="cut">
-  <h2>11 你的切割线</h2>
-  <p>下一步是「把哪一层作为你的基础框架」。四层不是四选一的套餐，而是一条可以停在任何一层的阶梯。详细用法见配套的《Rig 使用逻辑》。</p>
+  <h2>16 你的切割线</h2>
+  <p>下一步是「把哪一层作为你的基础框架」。四层不是四选一的套餐，而是一条可以停在任何一层的阶梯。详细用法见配套的《<a href="使用指南.html">使用指南</a>》。</p>
 
   <div class="table-wrap">
     <table>
@@ -736,5 +925,8 @@ section{margin-top:60px}
 
   <p>判断方法：如果你的产品需要在执行过程中看、拦、改，停在 ECS 这一层；如果只是「输入一段话，拿到一个结果」，停在 <code>rig-agent</code>，不要为了架构好看把 Bevy 引进依赖树。</p>
 </section>
+
+<hr class="rule">
+<p class="src">本文由《Rig 设计拆解》与《Rig 封装解剖》合并而成（2026-11-07）。调用链路盘点见《<a href="调用契约.html">调用契约</a>》，动手步骤见《<a href="使用指南.html">使用指南</a>》，改造目标见《<a href="控制平面架构.html">控制平面架构</a>》与《<a href="改造设计.md">改造设计</a>》。</p>
 
 </div>

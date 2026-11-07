@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="claude:viewport-fit-sides" content="cover">
-<title>Rig 控制平面架构</title>
+<title>控制平面架构</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,8 +129,8 @@
 </head>
 <body>
 <div class="frame">
-  <p class="eyebrow">rig-transformation-plan · §3–§10</p>
-  <h1>Rig 控制平面架构</h1>
+  <p class="eyebrow">改造设计 · §3–§10</p>
+  <h1>控制平面架构</h1>
   <p class="lede">
     rig 留作数据平面（L0 / L1：消息、wire / driver、工具契约、effect 记录），你补控制平面（执行、编排、用例、持久化、观测）。
     四张图各回答一个问题：主栈怎么分层、三场景怎么走同一条栈、effect 七阶段怎么转、journal 怎么记和恢复。
@@ -287,77 +287,90 @@
     <div class="diagram-container">
       <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f2-title f2-desc">
         <title id="f2-title">三场景在同一条栈上的三种走法</title>
-        <desc id="f2-desc">场景一与三从 L4 直达 L2，场景二经 L3 图解释器；自主性是 L2 的策略装配。</desc>
+        <desc id="f2-desc">场景一与三从 L4 直达 L2，场景二经 L3 图解释器；右侧面板列出三种装配共用 L1 与 L0。</desc>
         <defs>
           <marker id="f2-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
         </defs>
 
         <rect width="100%" height="100%" fill="#f5f5f5"/>
 
-        <!-- connectors first -->
-        <line x1="262" y1="352" x2="478" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
-        <path d="M 170,300 V 164 Q 170,156 178,156 H 478" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
-        <line x1="620" y1="194" x2="620" y2="298" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
-        <line x1="762" y1="352" x2="838" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
-        <line x1="1012" y1="352" x2="1088" y2="352" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
-        <path d="M 906,92 Q 820,140 706,288" fill="none" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
-        <circle cx="704" cy="292" r="2" fill="#2d3142"/>
+        <line x1="140" y1="144" x2="140" y2="230" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <path d="M 360,108 H 562 Q 570,108 570,116 V 148" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <path d="M 570,222 V 280 Q 570,288 562,288 H 364" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <line x1="220" y1="344" x2="220" y2="430" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
+        <line x1="220" y1="504" x2="220" y2="558" stroke="#4f5d75" stroke-width="1" marker-end="url(#f2-arrow)"/>
 
-        <!-- arrow labels -->
-        <rect x="336" y="332" width="68" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="370" y="342" class="al" text-anchor="middle">S1·S3 DIRECT</text>
-        <rect x="630" y="239" width="44" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="652" y="249" class="al" text-anchor="middle">SCEN 2</text>
-        <rect x="774" y="332" width="52" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="800" y="342" class="al" text-anchor="middle">DISPATCH</text>
-        <rect x="1028" y="332" width="44" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="1050" y="342" class="al" text-anchor="middle">SETTLE</text>
+        <rect x="152" y="178" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="176" y="188" class="al" text-anchor="middle">S1 · S3</text>
+        <rect x="452" y="86" width="24" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="464" y="96" class="al" text-anchor="middle">S2</text>
+        <rect x="416" y="264" width="100" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="466" y="274" class="al" text-anchor="middle">NODE ≡ L2 UNIT</text>
+        <rect x="232" y="378" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="258" y="388" class="al" text-anchor="middle">DISPATCH</text>
+        <rect x="232" y="524" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="256" y="534" class="al" text-anchor="middle">EXPRESS</text>
 
-        <!-- callout -->
-        <text x="1240" y="72" class="co" text-anchor="end">autonomy is policy load, not a new engine</text>
-
-        <!-- main rail -->
         <g>
-          <rect x="80" y="300" width="180" height="104" rx="6" fill="#f5f5f5"/>
-          <rect x="80" y="300" width="180" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <rect x="88" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
-          <text x="102" y="320" class="tg" text-anchor="middle">L4</text>
-          <text x="88" y="344" class="nm13">L4 应用层</text>
-          <text x="88" y="366" class="sb">run_agent · resume</text>
+          <rect x="80" y="72" width="280" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="80" y="72" width="280" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="88" y="80" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="102" y="90" class="tg" text-anchor="middle">L4</text>
+          <text x="96" y="112" class="nm13">L4 应用层</text>
+          <text x="96" y="132" class="sb">run_agent · resume</text>
 
-          <rect x="480" y="300" width="280" height="104" rx="6" fill="#f5f5f5"/>
-          <rect x="480" y="300" width="280" height="104" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
-          <rect x="488" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
-          <text x="502" y="320" class="tga" text-anchor="middle">L2</text>
-          <text x="488" y="344" class="nm13">L2 执行单元 your-exec</text>
-          <text x="488" y="366" class="sb">s1: steps · budget-capped</text>
-          <text x="488" y="384" class="sb">s3: stop · budget · compact · steer</text>
+          <rect x="440" y="150" width="260" height="72" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+          <rect x="452" y="158" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="466" y="168" class="tg" text-anchor="middle">L3</text>
+          <text x="452" y="190" class="nm13">L3 图解释器 · 场景二专用</text>
+          <text x="452" y="210" class="sb">nodes · edges · json only</text>
 
-          <rect x="840" y="300" width="170" height="104" rx="6" fill="#f5f5f5"/>
-          <rect x="840" y="300" width="170" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <rect x="848" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
-          <text x="862" y="320" class="tg" text-anchor="middle">L1</text>
-          <text x="848" y="344" class="nm13">L1 调度</text>
-          <text x="848" y="366" class="sb">effect dispatch</text>
+          <rect x="80" y="232" width="280" height="112" rx="6" fill="#f5f5f5"/>
+          <rect x="80" y="232" width="280" height="112" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+          <rect x="88" y="240" width="28" height="14" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="102" y="250" class="tga" text-anchor="middle">L2</text>
+          <text x="96" y="272" class="nm13">L2 执行单元 your-exec</text>
+          <text x="96" y="296" class="sb">one unit · one step or n</text>
+          <text x="96" y="314" class="sb">s1 budget cap · s3 four policies</text>
 
-          <rect x="1090" y="300" width="150" height="104" rx="6" fill="#f5f5f5"/>
-          <rect x="1090" y="300" width="150" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <rect x="1098" y="310" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
-          <text x="1112" y="320" class="tg" text-anchor="middle">L0</text>
-          <text x="1098" y="344" class="nm13">L0 契约</text>
-          <text x="1098" y="366" class="sb">serializable</text>
+          <rect x="80" y="432" width="280" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="80" y="432" width="280" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="88" y="440" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="102" y="450" class="tg" text-anchor="middle">L1</text>
+          <text x="96" y="472" class="nm13">L1 调度</text>
+          <text x="96" y="492" class="sb">effect dispatch · one path</text>
+
+          <rect x="80" y="560" width="280" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="80" y="560" width="280" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="88" y="568" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="102" y="578" class="tg" text-anchor="middle">L0</text>
+          <text x="96" y="600" class="nm13">L0 契约</text>
+          <text x="96" y="620" class="sb">serializable · no io</text>
         </g>
 
-        <!-- optional L3 detour -->
         <g>
-          <rect x="480" y="120" width="280" height="72" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
-          <rect x="488" y="130" width="28" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
-          <text x="502" y="140" class="tg" text-anchor="middle">L3</text>
-          <text x="488" y="162" class="nm13">L3 图解释器 · 场景二专用</text>
-          <text x="488" y="182" class="sb">nodes · edges · json only</text>
+          <rect x="780" y="150" width="420" height="450" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+          <rect x="792" y="162" width="84" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="834" y="172" class="tg" text-anchor="middle">THREE LOADS</text>
+          <text x="792" y="206" class="nm13">同一个执行单元，三种装配</text>
+
+          <text x="792" y="262" class="nm">S1 · 单次</text>
+          <text x="792" y="284" class="sb">steps · budget-capped</text>
+          <line x1="792" y1="310" x2="1188" y2="310" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+          <text x="792" y="342" class="nm">S2 · 图编排</text>
+          <text x="792" y="364" class="sb">node ≡ L2 unit · json edges</text>
+          <line x1="792" y1="390" x2="1188" y2="390" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+          <text x="792" y="422" class="nm">S3 · 自主循环</text>
+          <text x="792" y="444" class="sb">stop · budget · compact · steer</text>
+          <line x1="792" y1="470" x2="1188" y2="470" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+          <text x="792" y="502" class="nm">三场景共用</text>
+          <text x="792" y="524" class="sb">L1 dispatch · L0 contract · journal</text>
+          <text x="792" y="576" class="ch">journal 是唯一事实来源</text>
         </g>
 
-        <!-- legend -->
         <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
         <text x="40" y="686" class="ax">LEGEND</text>
         <rect x="128" y="676" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
@@ -370,23 +383,12 @@
         <text x="590" y="685" class="al">route</text>
       </svg>
     </div>
-    <div class="strip">
-      <div class="strip-item">
-        <h3><span class="card-dot ink"></span>S1 · 单次 agent</h3>
-        <p><code>L5 → L4 → L2 → L1 → L0</code>。一个 run，一个执行单元，一步或多步，轮数由预算限定。工具、MCP、skill 都落在 L1。</p>
-      </div>
-      <div class="strip-item">
-        <h3><span class="card-dot muted"></span>S2 · 图编排</h3>
-        <p><code>L5 → L4 → L3 → L2 → L1 → L0</code>。节点是 L2 执行单元，边上传 JSON。Fork / Map / Join 做并行，子图用路径前缀隔离。</p>
-      </div>
-      <div class="strip-item">
-        <h3><span class="card-dot coral"></span>S3 · 自主循环</h3>
-        <p>与 S1 同路，L2 装满四组策略（停止、预算、压缩、转向）加 turn 边界检查点。子 agent 是带 parent 的 effect。</p>
-      </div>
+
     </div>
     <p class="caption">
-      场景二的模型节点、工具节点在 L2 里都是单次执行单元，Agent 节点是多步执行单元，L3 不需要为不同节点写不同调度。
-      工具快照与 skill 快照随 run 持久化，MCP 离线仍可回放。
+      路径：S1 <code>L5 → L4 → L2 → L1 → L0</code>；S2 <code>L5 → L4 → L3 → L2 → L1 → L0</code>；S3 与 S1 同路，L2 多装四组策略。
+      场景二的模型节点、工具节点在 L2 里都是单次执行单元，Agent 节点是多步执行单元，L3 不为不同节点写不同调度。
+      工具与 skill 快照随 run 持久化，MCP 离线仍可回放。
     </p>
   </section>
 
@@ -435,85 +437,78 @@
     <div class="diagram-container">
       <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f3-title f3-desc">
         <title id="f3-title">Effect 七阶段固定点循环</title>
-        <desc id="f3-desc">effect 沿七阶段主轨推进，拒绝回 Review 并回填，执行后回到 Review，Commit 落 settled。</desc>
+        <desc id="f3-desc">effect 沿七阶段主轨推进，Gate 拒绝回 Review，Start 执行后回 Review，Commit 落 settled。</desc>
         <defs>
           <marker id="f3-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
         </defs>
 
         <rect width="100%" height="100%" fill="#f5f5f5"/>
 
-        <!-- connectors first -->
-        <line x1="204" y1="232" x2="236" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <line x1="372" y1="232" x2="404" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <line x1="540" y1="232" x2="572" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <line x1="708" y1="232" x2="740" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <line x1="876" y1="232" x2="908" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <line x1="1044" y1="232" x2="1076" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <path d="M 1144,268 V 316 Q 1144,324 1136,324 H 312 Q 304,324 304,316 V 270" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <path d="M 976,196 V 148 Q 976,140 968,140 H 312 Q 304,140 304,148 V 194" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#f3-arrow)"/>
-        <line x1="640" y1="268" x2="640" y2="402" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
-        <path d="M 344,566 Q 452,556 544,448" fill="none" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
-        <circle cx="546" cy="444" r="2" fill="#2d3142"/>
+        <line x1="202" y1="316" x2="236" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="370" y1="316" x2="404" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="538" y1="316" x2="572" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="706" y1="316" x2="740" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="874" y1="316" x2="908" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="1042" y1="316" x2="1076" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <path d="M 976,280 V 208 Q 976,200 968,200 H 280 Q 272,200 272,208 V 278" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#f3-arrow)"/>
+        <path d="M 1144,352 V 600 Q 1144,608 1136,608 H 308 Q 300,608 300,600 V 354" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
+        <line x1="472" y1="352" x2="472" y2="456" stroke="#4f5d75" stroke-width="1" marker-end="url(#f3-arrow)"/>
 
-        <!-- arrow labels -->
-        <rect x="706" y="332" width="48" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="730" y="342" class="al" text-anchor="middle">EXECUTE</text>
-        <rect x="618" y="118" width="48" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="642" y="128" class="al" text-anchor="middle">REFUSED</text>
-        <rect x="586" y="340" width="44" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="608" y="350" class="al" text-anchor="middle">COMMIT</text>
+        <rect x="600" y="180" width="56" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="628" y="190" class="al" text-anchor="middle">REFUSED</text>
+        <rect x="698" y="588" width="60" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="728" y="598" class="al" text-anchor="middle">EXECUTE</text>
+        <rect x="480" y="392" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="506" y="402" class="al" text-anchor="middle">SETTLE</text>
 
-        <!-- callout -->
-        <text x="70" y="580" class="co" text-anchor="start">先写 journal，再产生可见效果</text>
-        <text x="70" y="612" class="ch">门是策略，人工交互仍是一条 effect：begin 写 human_requested，settled 写 human_answered，中间有检查点</text>
-
-        <!-- seven stages -->
         <g>
-          <rect x="70" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="70" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="136" y="226" class="nm" text-anchor="middle">Arrive</text>
-          <text x="136" y="248" class="sb" text-anchor="middle">spawn</text>
+          <rect x="70" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="70" y="280" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="136" y="310" class="nm" text-anchor="middle">Arrive</text>
+          <text x="136" y="332" class="sb" text-anchor="middle">spawn</text>
 
-          <rect x="238" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="238" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="304" y="226" class="nm" text-anchor="middle">Review</text>
-          <text x="304" y="248" class="sb" text-anchor="middle">review()</text>
+          <rect x="238" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="238" y="280" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="304" y="310" class="nm" text-anchor="middle">Review</text>
+          <text x="304" y="332" class="sb" text-anchor="middle">review()</text>
 
-          <rect x="406" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="406" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="472" y="226" class="nm" text-anchor="middle">Commit</text>
-          <text x="472" y="248" class="sb" text-anchor="middle">settle · spawn</text>
+          <rect x="406" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="406" y="280" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="472" y="310" class="nm" text-anchor="middle">Commit</text>
+          <text x="472" y="332" class="sb" text-anchor="middle">settle · spawn</text>
 
-          <rect x="574" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="574" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="640" y="226" class="nm" text-anchor="middle">Admit</text>
-          <text x="640" y="248" class="sb" text-anchor="middle">pass</text>
+          <rect x="574" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="574" y="280" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="640" y="310" class="nm" text-anchor="middle">Admit</text>
+          <text x="640" y="332" class="sb" text-anchor="middle">pass</text>
 
-          <rect x="742" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="742" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="808" y="226" class="nm" text-anchor="middle">Prepare</text>
-          <text x="808" y="248" class="sb" text-anchor="middle">prepare()</text>
+          <rect x="742" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="742" y="280" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="808" y="310" class="nm" text-anchor="middle">Prepare</text>
+          <text x="808" y="332" class="sb" text-anchor="middle">prepare()</text>
 
-          <rect x="910" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="910" y="196" width="132" height="72" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
-          <text x="976" y="226" class="nm" text-anchor="middle">Gate</text>
-          <text x="976" y="248" class="sb" text-anchor="middle">gate() · human?</text>
+          <rect x="910" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="910" y="280" width="132" height="72" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+          <text x="976" y="310" class="nm" text-anchor="middle">Gate</text>
+          <text x="976" y="332" class="sb" text-anchor="middle">gate() · human?</text>
 
-          <rect x="1078" y="196" width="132" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="1078" y="196" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="1144" y="226" class="nm" text-anchor="middle">Start</text>
-          <text x="1144" y="248" class="sb" text-anchor="middle">execute()</text>
+          <rect x="1078" y="280" width="132" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="1078" y="280" width="132" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="1144" y="310" class="nm" text-anchor="middle">Start</text>
+          <text x="1144" y="332" class="sb" text-anchor="middle">execute()</text>
         </g>
 
-        <!-- terminal -->
         <g>
-          <rect x="548" y="404" width="184" height="72" rx="6" fill="#f5f5f5"/>
-          <rect x="548" y="404" width="184" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="640" y="434" class="nm" text-anchor="middle">Settled 提交</text>
-          <text x="640" y="456" class="sb" text-anchor="middle">model→next turn · tool→slot</text>
+          <rect x="380" y="460" width="184" height="72" rx="6" fill="#f5f5f5"/>
+          <rect x="380" y="460" width="184" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="472" y="490" class="nm" text-anchor="middle">Settled 提交</text>
+          <text x="472" y="512" class="sb" text-anchor="middle">next turn · tool slot</text>
         </g>
 
-        <!-- legend -->
+        <text x="80" y="470" class="co" text-anchor="start">先写 journal，再产生可见效果</text>
+        <path d="M 336,462 Q 386,420 438,358" fill="none" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
+        <circle cx="440" cy="356" r="2" fill="#2d3142"/>
+
         <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
         <text x="40" y="686" class="ax">LEGEND</text>
         <rect x="128" y="676" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
@@ -527,6 +522,7 @@
       </svg>
     </div>
     <p class="caption">
+      门是策略，人工交互仍是一条 effect：begin 写 human_requested，settled 写 human_answered，中间有检查点。
       现状插件三方法：prepare 改请求，gate 拒绝，review 改结果。目标补齐：Commit 先写 journal 再产生可见效果；
       Gate 可挂起为人工 effect（human_requested 到检查点到 human_answered）；settle_tool 按 call_id 槽位回填；
       确定性 effect id 加去重。拒绝回 Review 后，工具走回填路径，模型走结束路径。
@@ -544,62 +540,66 @@
     <div class="diagram-container">
       <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f4-title f4-desc">
         <title id="f4-title">Journal 事件序列与人工中断挂起</title>
-        <desc id="f4-desc">journal 主轨记录五类事件并定期打检查点，人工中断挂起在第二条时间线上。</desc>
+        <desc id="f4-desc">run、journal 与 human 三族事件共用一条时间轴，检查点标记重放窗口的起点。</desc>
         <defs>
           <marker id="f4-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
         </defs>
 
         <rect width="100%" height="100%" fill="#f5f5f5"/>
 
-        <text x="40" y="200" class="ax">APPEND-ONLY · ORDER IS TIME</text>
+        <text x="40" y="72" class="ax">APPEND-ONLY · ORDER IS TIME</text>
+        <text x="1240" y="72" class="al" text-anchor="end">TIME →</text>
 
-        <!-- journal rail -->
-        <text x="80" y="306" class="ax">JOURNAL</text>
-        <line x1="80" y1="280" x2="1200" y2="280" stroke="#2d3142" stroke-width="1.5" marker-end="url(#f4-arrow)"/>
+        <text x="40" y="224" class="ax">RUN</text>
+        <text x="40" y="404" class="ax">JOURNAL</text>
+        <text x="40" y="564" class="ax">HUMAN</text>
 
-        <line x1="140" y1="254" x2="140" y2="274" stroke="#4f5d75" stroke-width="1"/>
-        <circle cx="140" cy="280" r="4" fill="#2d3142"/>
-        <text x="140" y="248" class="nm" text-anchor="middle">run_started</text>
-        <text x="140" y="230" class="sb" text-anchor="middle">tools · skill snapshot</text>
+        <line x1="160" y1="220" x2="1200" y2="220" stroke="#2d3142" stroke-width="1.5" marker-end="url(#f4-arrow)"/>
+        <line x1="160" y1="400" x2="1200" y2="400" stroke="#2d3142" stroke-width="1.5" marker-end="url(#f4-arrow)"/>
+        <line x1="400" y1="560" x2="900" y2="560" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
 
-        <line x1="400" y1="286" x2="400" y2="302" stroke="#4f5d75" stroke-width="1"/>
-        <circle cx="400" cy="280" r="4" fill="#2d3142"/>
-        <text x="400" y="316" class="nm" text-anchor="middle">effect_begin</text>
-        <text x="400" y="332" class="sb" text-anchor="middle">id · type · summary</text>
+        <line x1="200" y1="194" x2="200" y2="216" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="200" cy="220" r="4" fill="#2d3142"/>
+        <text x="200" y="188" class="nm" text-anchor="middle">run_started</text>
+        <text x="200" y="170" class="sb" text-anchor="middle">tools · skill snapshot</text>
 
-        <line x1="640" y1="254" x2="640" y2="274" stroke="#4f5d75" stroke-width="1"/>
-        <circle cx="640" cy="280" r="4" fill="#2d3142"/>
-        <text x="640" y="248" class="nm" text-anchor="middle">effect_settled</text>
-        <text x="640" y="230" class="sb" text-anchor="middle">result · usage · span</text>
+        <line x1="1140" y1="194" x2="1140" y2="216" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="1140" cy="220" r="4" fill="#2d3142"/>
+        <text x="1140" y="188" class="nm" text-anchor="middle">run_finished</text>
+        <text x="1140" y="170" class="sb" text-anchor="middle">output · error</text>
 
-        <line x1="880" y1="254" x2="880" y2="272" stroke="#bf4520" stroke-width="1"/>
-        <circle cx="880" cy="280" r="6" fill="#bf4520"/>
-        <text x="880" y="248" class="nm" text-anchor="middle" font-weight="700">checkpoint</text>
-        <text x="880" y="230" class="sb" text-anchor="middle">snapshot · cursor</text>
+        <line x1="400" y1="404" x2="400" y2="420" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="400" cy="400" r="4" fill="#2d3142"/>
+        <text x="400" y="436" class="nm" text-anchor="middle">effect_begin</text>
+        <text x="400" y="452" class="sb" text-anchor="middle">id · type · summary</text>
 
-        <line x1="1140" y1="286" x2="1140" y2="302" stroke="#4f5d75" stroke-width="1"/>
-        <circle cx="1140" cy="280" r="4" fill="#2d3142"/>
-        <text x="1140" y="316" class="nm" text-anchor="middle">run_finished</text>
-        <text x="1140" y="332" class="sb" text-anchor="middle">output · error</text>
+        <line x1="640" y1="376" x2="640" y2="396" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="640" cy="400" r="4" fill="#2d3142"/>
+        <text x="640" y="368" class="nm" text-anchor="middle">effect_settled</text>
+        <text x="640" y="350" class="sb" text-anchor="middle">result · usage · span</text>
 
-        <!-- human rail -->
-        <text x="400" y="442" class="ax">HUMAN</text>
-        <line x1="460" y1="460" x2="820" y2="460" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
-        <rect x="612" y="440" width="56" height="14" rx="2" fill="#f5f5f5"/>
-        <text x="640" y="450" class="al" text-anchor="middle">SUSPENDED</text>
+        <line x1="880" y1="374" x2="880" y2="394" stroke="#bf4520" stroke-width="1"/>
+        <circle cx="880" cy="400" r="6" fill="#bf4520"/>
+        <text x="880" y="366" class="nm" text-anchor="middle" font-weight="700">checkpoint</text>
+        <text x="880" y="348" class="sb" text-anchor="middle">snapshot · cursor</text>
 
-        <circle cx="460" cy="460" r="4" fill="#2d3142"/>
-        <text x="460" y="488" class="nm" text-anchor="middle">human_requested</text>
-        <text x="460" y="504" class="sb" text-anchor="middle">gate · scope · options</text>
+        <path d="M 880,412 V 424 H 1140 V 412" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="974" y="432" width="72" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="1010" y="441" class="al" text-anchor="middle">REPLAY</text>
 
-        <circle cx="820" cy="460" r="4" fill="#2d3142"/>
-        <text x="820" y="488" class="nm" text-anchor="middle">human_answered</text>
-        <text x="820" y="504" class="sb" text-anchor="middle">decision · reason</text>
+        <line x1="460" y1="564" x2="460" y2="580" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="460" cy="560" r="4" fill="#2d3142"/>
+        <text x="460" y="596" class="nm" text-anchor="middle">human_requested</text>
+        <text x="460" y="612" class="sb" text-anchor="middle">gate · scope · options</text>
 
-        <text x="80" y="560" class="ch">事件顺序示意，未按真实时间等距。节点行（node_started → node_finished）与上表同形，从略。</text>
-        <text x="80" y="584" class="ch">回放缺记录必须报错，绝不静默调外部服务。检查点写入中遇到半条记录则丢弃，回到上一个检查点。</text>
+        <line x1="820" y1="564" x2="820" y2="580" stroke="#4f5d75" stroke-width="1"/>
+        <circle cx="820" cy="560" r="4" fill="#2d3142"/>
+        <text x="820" y="596" class="nm" text-anchor="middle">human_answered</text>
+        <text x="820" y="612" class="sb" text-anchor="middle">decision · reason</text>
 
-        <!-- legend -->
+        <rect x="612" y="540" width="56" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="640" y="550" class="al" text-anchor="middle">SUSPENDED</text>
+
         <line x1="40" y1="664" x2="1240" y2="664" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
         <text x="40" y="686" class="ax">LEGEND</text>
         <circle cx="128" cy="681" r="4" fill="#2d3142"/>
@@ -723,7 +723,7 @@
     </div>
   </div>
 
-  <footer>来源：docs/rig-transformation-plan.md §3–§10 · mini-rig src/agent.rs、src/effect.rs、src/driver.rs、src/wire.rs · 六条不变量见 §14。</footer>
+  <footer>来源：<a href="改造设计.md">改造设计.md</a> §3–§10 · mini-rig src/agent.rs、src/effect.rs、src/driver.rs、src/wire.rs · 六条不变量见 §14。</footer>
 </div>
 </body>
 </html>
