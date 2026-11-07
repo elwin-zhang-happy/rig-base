@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rig L2 执行层 · UML 类图</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper: #f5f5f5;
+      --color-panel: #ffffff;
+      --color-ink: #2d3142;
+      --color-muted: #4f5d75;
+      --color-accent: #bf4520;
+      --color-rule: rgba(45,49,66,0.12);
+    }
+    body { font-family: 'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif; background: var(--color-paper); color: var(--color-ink); padding: 3rem 1rem 4rem; }
+    .frame { max-width: 1360px; margin: 0 auto; }
+    .eyebrow { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(1.6rem, 2.6vw + 0.8rem, 2.35rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1rem; }
+    .lede { color: var(--color-muted); font-size: 0.94rem; line-height: 1.7; max-width: 54rem; }
+    .series-nav { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.72rem; color: var(--color-muted); margin-top: 1rem; }
+    .series-nav a { color: var(--color-muted); }
+    .series-nav strong { color: var(--color-ink); }
+    section { margin-top: 3.5rem; }
+    h2 { font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: 1.35rem; font-weight: 400; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+    .section-note { color: var(--color-muted); font-size: 0.88rem; line-height: 1.65; max-width: 54rem; margin-bottom: 1.25rem; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .diagram-container > svg { width: 100%; min-width: 1280px; display: block; }
+    svg text { font-variant-numeric: tabular-nums; }
+    .caption { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.7rem; line-height: 1.75; color: var(--color-muted); margin-top: 0.85rem; max-width: 64rem; }
+    footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--color-rule); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.7rem; color: var(--color-muted); }
+    @media print { .diagram-container { overflow-x: visible; } .diagram-container > svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">UML class · Rig L2</p>
+    <h1>Rig L2 执行层 · UML 类图</h1>
+    <p class="lede">L2 回答一个执行单元如何推进：Agent 装配默认，AgentRunner 驾驶无 IO 的 AgentRun 状态机，TurnPolicy 按轮落门，AgentHook 在一组 on_ 回调点上转向。两张图 11 个类，全部住在 rig-agent。</p>
+    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <strong>L2 执行</strong> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <a href="L5宿主层类图.html">L5 宿主</a> · <a href="横切面类图.html">横切面</a></p>
+    <section>
+      <h2>L2-1 · 推进链：装配、启动、驾驶、转向</h2>
+      <p class="section-note">AgentBuilder 一次性装配模型、工具与路由；Agent 每次 prompt 产出一个 AgentRunner；Runner 叠加 per-run 覆盖，沿同一条驱动循环推进；AgentHook 只看只改，不拥有状态。</p>
+      <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="l2a-title l2a-desc">
+        <title id="l2a-title">Rig L2 推进链类图</title>
+        <desc id="l2a-desc">Class diagram showing AgentBuilder building Agent, Agent spawning AgentRunner with RunSpec defaults, and Runner steered by AgentHook.</desc>
+        <defs>
+          <marker id="l2a-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l2a-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#2d3142"/></marker>
+          <marker id="l2a-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l2a-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#4f5d75" stroke-width="1"/></marker>
+        </defs>
+        <rect width="1280" height="720" fill="#f5f5f5"/>
+        <line x1="360" y1="150" x2="432" y2="150" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2a-open)"/>
+        <line x1="760" y1="150" x2="832" y2="150" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2a-open)"/>
+        <path d="M 600,270 V 300 H 225 V 332" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2a-open)"/>
+        <line x1="390" y1="445" x2="462" y2="445" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l2a-open)"/>
+        <rect x="370" y="143" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="396" y="153" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BUILDS</text>
+        <rect x="767" y="143" width="58" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="796" y="153" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">DEFAULTS</text>
+        <rect x="386" y="285" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="412" y="295" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SPAWNS</text>
+        <rect x="395" y="437" width="62" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="426" y="447" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">STEERS BY</text>
+        <rect x="412" y="144" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="420" y="154" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="812" y="144" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="820" y="154" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="205" y="306" width="36" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="223" y="316" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1..*</text>
+        <rect x="60" y="60" width="300" height="210" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="100" x2="360" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="210" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentBuilder</text>
+        <text x="76" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">model: DefaultModel</text>
+        <text x="76" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">tools: ToolServer</text>
+        <text x="76" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="60" y1="178" x2="360" y2="178" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ new(model): Self</text>
+        <text x="76" y="214" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ preamble(..) / tool(..)</text>
+        <text x="76" y="234" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ build(): Agent</text>
+        <rect x="440" y="60" width="320" height="210" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="440" y1="100" x2="760" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="600" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Agent</text>
+        <text x="456" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">config: AgentConfig</text>
+        <text x="456" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">tool_server_handle: […]</text>
+        <text x="456" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="440" y1="178" x2="760" y2="178" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="456" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ prompt(msg): AgentRunner</text>
+        <text x="456" y="214" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ resume(run): AgentRunner</text>
+        <text x="456" y="234" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ prompt_typed(msg): TypedRun</text>
+        <rect x="840" y="60" width="340" height="210" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="840" y1="100" x2="1180" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1010" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">RunSpec</text>
+        <text x="856" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">preamble / static_context</text>
+        <text x="856" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">options: GenerationOptions</text>
+        <text x="856" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">max_tokens / …</text>
+        <line x1="840" y1="178" x2="1180" y2="178" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="856" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ new(): Self</text>
+        <text x="856" y="214" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ effective_max_turns(): usize</text>
+        <text x="856" y="234" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <rect x="60" y="340" width="330" height="210" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="380" x2="390" y2="380" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="225" y="372" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentRunner</text>
+        <text x="76" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">origin: RunOrigin / …</text>
+        <line x1="60" y1="418" x2="390" y2="418" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="434" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ run(): Future&lt;PromptResponse&gt;</text>
+        <text x="76" y="454" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ stream(): StreamingResult</text>
+        <text x="76" y="474" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ run_channel(): (Future, Events)</text>
+        <text x="76" y="494" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ add_hook(..) / max_turns(..)</text>
+        <rect x="470" y="340" width="350" height="210" rx="6" fill="rgba(191,69,32,0.04)" stroke="#bf4520" stroke-width="1"/>
+        <rect x="470" y="340" width="350" height="40" rx="6" fill="rgba(191,69,32,0.10)"/>
+        <rect x="470" y="372" width="350" height="8" fill="rgba(191,69,32,0.10)"/>
+        <line x1="470" y1="380" x2="820" y2="380" stroke="rgba(191,69,32,0.40)" stroke-width="1"/>
+        <text x="645" y="356" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«interface»</text>
+        <text x="645" y="372" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentHook</text>
+        <text x="486" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">on_run_start(..): RunStartAction</text>
+        <text x="486" y="420" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">on_model_select(..): Action</text>
+        <text x="486" y="440" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">on_completion_call(..): Action</text>
+        <text x="486" y="460" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">on_model_turn_finished(..)</text>
+        <text x="486" y="480" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">on_invalid_tool_call(..)</text>
+        <text x="486" y="500" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="30" y1="660" x2="1250" y2="660" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <line x1="30" y1="688" x2="58" y2="688" stroke="#2d3142" stroke-width="1" marker-end="url(#l2a-triangle)"/>
+        <text x="66" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">INHERITANCE</text>
+        <line x1="190" y1="688" x2="218" y2="688" stroke="#2d3142" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l2a-triangle)"/>
+        <text x="226" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">REALIZATION</text>
+        <line x1="370" y1="688" x2="398" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l2a-diamond-filled)"/>
+        <text x="406" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">COMPOSITION</text>
+        <line x1="550" y1="688" x2="578" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l2a-diamond-hollow)"/>
+        <text x="586" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">AGGREGATION</text>
+        <line x1="730" y1="688" x2="758" y2="688" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2a-open)"/>
+        <text x="766" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">ASSOCIATION</text>
+        <line x1="910" y1="688" x2="938" y2="688" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l2a-open)"/>
+        <text x="946" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DEPENDENCY</text>
+      </svg>
+      </div>
+      <p class="caption">读法：Builder 装配，Agent 启动，Runner 驾驶，Hook 转向，RunSpec 管预算与输出。Runner 的 per-run 覆盖（max_turns、model、preamble 等几十个选项）不回写 Agent；run() 与 stream() 共用同一条驱动循环 engine::drive_agent。收拢未画：HookStack 与各回调的事件和动作类型；OutputMode 与 UnhandledInvalidToolCall；Extractor 与 TypedRun（循环之上，非循环之中）。Runner 驾驶的 AgentRun 状态机见 L2-2。</p>
+    </section>
+    <section>
+      <h2>L2-2 · 状态机：无 IO 的推进协议</h2>
+      <p class="section-note">AgentRun 是可序列化的状态机：next_step 说要什么，driver 做完经 model_response 或 answer 反馈回来；TurnPolicy 决定本轮哪些工具可执行；答复经 answer 或 answer_all 生效。</p>
+      <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="l2b-title l2b-desc">
+        <title id="l2b-title">Rig L2 状态机类图</title>
+        <desc id="l2b-desc">Class diagram showing AgentRun emitting AgentRunStep, steps listing tool calls or ending in PromptResponse, gated by TurnPolicy carried on PreparedRequest.</desc>
+        <defs>
+          <marker id="l2b-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l2b-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#2d3142"/></marker>
+          <marker id="l2b-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l2b-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#4f5d75" stroke-width="1"/></marker>
+        </defs>
+        <rect width="1280" height="720" fill="#f5f5f5"/>
+        <line x1="390" y1="150" x2="462" y2="150" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2b-open)"/>
+        <line x1="635" y1="190" x2="635" y2="312" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2b-open)"/>
+        <path d="M 470,175 H 430 V 335 H 300 V 352" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2b-open)"/>
+        <path d="M 225,60 V 32 H 1030 V 52" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l2b-open)"/>
+        <line x1="1030" y1="300" x2="1030" y2="248" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2b-open)"/>
+        <rect x="402" y="143" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="426" y="153" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EMITS</text>
+        <rect x="643" y="238" width="44" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="665" y="248" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">LISTS</text>
+        <rect x="345" y="320" width="40" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="365" y="330" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">DONE</text>
+        <rect x="599" y="17" width="58" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="628" y="27" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">GATES BY</text>
+        <rect x="1038" y="264" width="58" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="1067" y="274" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CARRIES</text>
+        <rect x="442" y="144" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="450" y="154" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="615" y="292" width="36" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="633" y="302" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1..*</text>
+        <rect x="60" y="60" width="330" height="250" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="100" x2="390" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="225" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentRun</text>
+        <text x="76" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">max_turns / current_turn / usage</text>
+        <text x="76" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">history: CommittedLog / format: 5</text>
+        <text x="76" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="60" y1="178" x2="390" y2="178" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ next_step(): AgentRunStep</text>
+        <text x="76" y="214" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ model_response(turn)</text>
+        <text x="76" y="234" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ answer(..) / answer_all(..)</text>
+        <rect x="470" y="60" width="330" height="130" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="470" y1="100" x2="800" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="635" y="76" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«enum»</text>
+        <text x="635" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentRunStep</text>
+        <text x="486" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CallModel { prompt, history, turn }</text>
+        <text x="486" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CallTools { calls }</text>
+        <text x="486" y="160" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Done(PromptResponse)</text>
+        <rect x="880" y="60" width="300" height="180" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="880" y1="100" x2="1180" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1030" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">TurnPolicy</text>
+        <text x="896" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">executable: {names}</text>
+        <text x="896" y="140" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">tool_choice / output_tool</text>
+        <line x1="880" y1="158" x2="1180" y2="158" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="896" y="174" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ allows(name): bool</text>
+        <text x="896" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ executable(): &amp;BTreeSet</text>
+        <text x="896" y="214" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <rect x="880" y="300" width="300" height="210" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="880" y1="340" x2="1180" y2="340" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1030" y="332" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PreparedRequest</text>
+        <text x="896" y="360" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">chat_history / documents</text>
+        <text x="896" y="380" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">tools / provider_tools</text>
+        <text x="896" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">policy: TurnPolicy / output_mode</text>
+        <line x1="880" y1="416" x2="1180" y2="416" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="896" y="432" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ apply(req): CompletionRequest</text>
+        <text x="896" y="452" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <rect x="470" y="320" width="330" height="110" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="470" y1="360" x2="800" y2="360" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="635" y="336" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«enum»</text>
+        <text x="635" y="352" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PendingToolCall</text>
+        <text x="486" y="380" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Execute(ExecCall)</text>
+        <text x="486" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Malformed(MalformedCall)</text>
+        <rect x="60" y="360" width="330" height="180" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="400" x2="390" y2="400" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="225" y="392" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PromptResponse</text>
+        <text x="76" y="420" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">usage: Usage</text>
+        <text x="76" y="440" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">messages / content / …</text>
+        <line x1="60" y1="458" x2="390" y2="458" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="474" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ output(): String</text>
+        <text x="76" y="494" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ usage() / requests()</text>
+        <line x1="30" y1="660" x2="1250" y2="660" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <line x1="30" y1="688" x2="58" y2="688" stroke="#2d3142" stroke-width="1" marker-end="url(#l2b-triangle)"/>
+        <text x="66" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">INHERITANCE</text>
+        <line x1="190" y1="688" x2="218" y2="688" stroke="#2d3142" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l2b-triangle)"/>
+        <text x="226" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">REALIZATION</text>
+        <line x1="370" y1="688" x2="398" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l2b-diamond-filled)"/>
+        <text x="406" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">COMPOSITION</text>
+        <line x1="550" y1="688" x2="578" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l2b-diamond-hollow)"/>
+        <text x="586" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">AGGREGATION</text>
+        <line x1="730" y1="688" x2="758" y2="688" stroke="#4f5d75" stroke-width="1" marker-end="url(#l2b-open)"/>
+        <text x="766" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">ASSOCIATION</text>
+        <line x1="910" y1="688" x2="938" y2="688" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l2b-open)"/>
+        <text x="946" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DEPENDENCY</text>
+      </svg>
+      </div>
+      <p class="caption">读法：driver 匹配 AgentRunStep 行动：调模型、答工具、或结束；畸形调用永不执行，只能按 InvalidToolCallAction 处置；门没有独立类型，本轮归 TurnPolicy，跨轮转向归 Hook（见 L2-1）。TurnPolicy 由 RunSpec 派生；流式与 unary 共用同一状态机，StreamedTurn 只是另一种投喂。收拢未画：RunState、CommittedLog 与 ToolBatch 等 Run 内部件；RetryRequest 与修复路径。</p>
+    </section>
+    <footer>Rig L2 · UML class · 类成员与签名取自当前工作树 rig-agent（agent、run）· 2026-11-07</footer>
+  </div>
+</body>
+</html>

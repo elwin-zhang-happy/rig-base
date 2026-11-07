@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rig L5 宿主层 · UML 类图</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper: #f5f5f5;
+      --color-panel: #ffffff;
+      --color-ink: #2d3142;
+      --color-muted: #4f5d75;
+      --color-accent: #bf4520;
+      --color-rule: rgba(45,49,66,0.12);
+    }
+    body { font-family: 'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif; background: var(--color-paper); color: var(--color-ink); padding: 3rem 1rem 4rem; }
+    .frame { max-width: 1360px; margin: 0 auto; }
+    .eyebrow { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(1.6rem, 2.6vw + 0.8rem, 2.35rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1rem; }
+    .lede { color: var(--color-muted); font-size: 0.94rem; line-height: 1.7; max-width: 54rem; }
+    .series-nav { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.72rem; color: var(--color-muted); margin-top: 1rem; }
+    .series-nav a { color: var(--color-muted); }
+    .series-nav strong { color: var(--color-ink); }
+    section { margin-top: 3.5rem; }
+    h2 { font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: 1.35rem; font-weight: 400; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+    .section-note { color: var(--color-muted); font-size: 0.88rem; line-height: 1.65; max-width: 54rem; margin-bottom: 1.25rem; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .diagram-container > svg { width: 100%; min-width: 1280px; display: block; }
+    svg text { font-variant-numeric: tabular-nums; }
+    .caption { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.7rem; line-height: 1.75; color: var(--color-muted); margin-top: 0.85rem; max-width: 64rem; }
+    footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--color-rule); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.7rem; color: var(--color-muted); }
+    @media print { .diagram-container { overflow-x: visible; } .diagram-container > svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">UML class · Rig L5</p>
+    <h1>Rig L5 宿主层 · UML 类图</h1>
+    <p class="lede">L5 回答谁发起、谁消费：发起是 rig launcher 二进制（读布局、认会话、传参数），消费只有终端、headless stdio、编辑器桥三面，加一种库嵌入。两张图 11 个类，另有一个跨页引用（Agent，详见 L4-1）。</p>
+    <p class="series-nav">本系列：<a href="L0契约层类图.html">L0 契约</a> · <a href="L1调用层类图.html">L1 调用</a> · <a href="L2执行层类图.html">L2 执行</a> · <a href="L3编排层类图.html">L3 编排</a> · <a href="L4应用层类图.html">L4 应用</a> · <strong>L5 宿主</strong> · <a href="横切面类图.html">横切面</a></p>
+    <section>
+      <h2>L5-1 · 启动：launcher 如何开一次 run</h2>
+      <p class="section-note">run 是 rig 二进制的入口循环：读 Home 布局，认领 session，把 Invocation 交给 agent 一侧；AgentDescription 是插件上报的 CLI 形状，launcher 照着它认命令。</p>
+      <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="l5a-title l5a-desc">
+        <title id="l5a-title">Rig L5 启动类图</title>
+        <desc id="l5a-desc">Class diagram showing the run loop reading Home layout and AgentDescription, passing Invocation, which selects a DescribedCommand.</desc>
+        <defs>
+          <marker id="l5a-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l5a-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#2d3142"/></marker>
+          <marker id="l5a-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l5a-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#4f5d75" stroke-width="1"/></marker>
+        </defs>
+        <rect width="1280" height="720" fill="#f5f5f5"/>
+        <line x1="230" y1="260" x2="230" y2="238" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5a-open)"/>
+        <path d="M 380,300 H 450 V 260 H 600 V 248" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5a-open)"/>
+        <line x1="380" y1="340" x2="492" y2="340" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5a-open)"/>
+        <line x1="840" y1="340" x2="912" y2="340" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5a-open)"/>
+        <line x1="820" y1="150" x2="912" y2="150" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l5a-open)"/>
+        <rect x="238" y="242" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="262" y="252" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">READS</text>
+        <rect x="501" y="245" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="525" y="255" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PASSES</text>
+        <rect x="412" y="332" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="436" y="342" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">READS</text>
+        <rect x="852" y="332" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="876" y="342" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">LISTS</text>
+        <rect x="836" y="142" width="60" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="866" y="152" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SELECTS</text>
+        <rect x="892" y="334" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="900" y="344" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="80" y="260" width="300" height="110" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="80" y1="300" x2="380" y2="300" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="230" y="276" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«launcher»</text>
+        <text x="230" y="292" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">run</text>
+        <text x="96" y="320" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">run(home, args): ExitCode</text>
+        <text x="96" y="340" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">launch(..) / claim(..)</text>
+        <rect x="80" y="60" width="300" height="170" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="80" y1="100" x2="380" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="230" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Home</text>
+        <text x="96" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="80" y1="138" x2="380" y2="138" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="96" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ from_env(): Self</text>
+        <text x="96" y="174" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ session(id): SessionDir</text>
+        <text x="96" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ staged_for(id): PathBuf</text>
+        <rect x="500" y="60" width="320" height="180" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="500" y1="100" x2="820" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="660" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Invocation</text>
+        <text x="516" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="500" y1="138" x2="820" y2="138" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="516" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ parse(args): Self</text>
+        <text x="516" y="174" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ to_args(): [OsString]</text>
+        <text x="516" y="194" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ is_headless(): bool</text>
+        <rect x="500" y="300" width="340" height="180" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="500" y1="340" x2="840" y2="340" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="670" y="332" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentDescription</text>
+        <text x="516" y="360" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="500" y1="378" x2="840" y2="378" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="516" y="394" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ parse(text): Self</text>
+        <text x="516" y="414" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ write(): String</text>
+        <text x="516" y="434" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ invocation(args): Invocation</text>
+        <rect x="920" y="150" width="300" height="210" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="920" y1="190" x2="1220" y2="190" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1070" y="182" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">DescribedCommand</text>
+        <text x="936" y="210" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">name / usage</text>
+        <text x="936" y="230" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">terminal / sessionless</text>
+        <text x="936" y="250" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">help</text>
+        <line x1="30" y1="660" x2="1250" y2="660" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <line x1="30" y1="688" x2="58" y2="688" stroke="#2d3142" stroke-width="1" marker-end="url(#l5a-triangle)"/>
+        <text x="66" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">INHERITANCE</text>
+        <line x1="190" y1="688" x2="218" y2="688" stroke="#2d3142" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l5a-triangle)"/>
+        <text x="226" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">REALIZATION</text>
+        <line x1="370" y1="688" x2="398" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l5a-diamond-filled)"/>
+        <text x="406" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">COMPOSITION</text>
+        <line x1="550" y1="688" x2="578" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l5a-diamond-hollow)"/>
+        <text x="586" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">AGGREGATION</text>
+        <line x1="730" y1="688" x2="758" y2="688" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5a-open)"/>
+        <text x="766" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">ASSOCIATION</text>
+        <line x1="910" y1="688" x2="938" y2="688" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l5a-open)"/>
+        <text x="946" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DEPENDENCY</text>
+      </svg>
+      </div>
+      <p class="caption">读法：启动等于读布局、认会话、传参数三步；命令的形状由插件上报，launcher 只认不上报。收拢未画：Home 下的 session 与 staged 等目录；DescribedFlag；rig plugin、project、build 等管理命令。</p>
+    </section>
+    <section>
+      <h2>L5-2 · 消费：谁看结果、谁嵌进去</h2>
+      <p class="section-note">消费只有三面：交互终端（TuiPlugin）、headless 的 stdio 驱动（PrintPlugin）、编辑器经 AcpPlugin 接入；ChatBotBuilder 是库嵌入形态，HelpersPlugin 把能力包成工具。</p>
+      <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="l5b-title l5b-desc">
+        <title id="l5b-title">Rig L5 消费类图</title>
+        <desc id="l5b-desc">Class diagram showing three front plugins, ChatBotBuilder embedding an Agent and building a ChatBot, and HelpersPlugin packaging capabilities as tools.</desc>
+        <defs>
+          <marker id="l5b-triangle" markerWidth="16" markerHeight="12" refX="15" refY="6" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 16 6, 0 12" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l5b-diamond-filled" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l5b-diamond-hollow" markerWidth="18" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 5, 9 0, 18 5, 9 10" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+          <marker id="l5b-open" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L9,4 L0,8" fill="none" stroke="#4f5d75" stroke-width="1"/></marker>
+        </defs>
+        <rect width="1280" height="720" fill="#f5f5f5"/>
+        <line x1="390" y1="395" x2="462" y2="395" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5b-open)"/>
+        <line x1="170" y1="530" x2="170" y2="537" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l5b-open)"/>
+        <rect x="402" y="387" width="48" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="426" y="397" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BUILDS</text>
+        <rect x="110" y="528" width="52" height="14" rx="2" fill="#f5f5f5"/>
+        <text x="136" y="538" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EMBEDS</text>
+        <rect x="442" y="389" width="16" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="450" y="399" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" font-weight="600">1</text>
+        <rect x="60" y="60" width="300" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="100" x2="360" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="210" y="76" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«front»</text>
+        <text x="210" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">TuiPlugin</text>
+        <text x="76" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="60" y1="138" x2="360" y2="138" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ build(app)</text>
+        <rect x="450" y="60" width="320" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="450" y1="100" x2="770" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="610" y="76" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«front»</text>
+        <text x="610" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PrintPlugin</text>
+        <text x="466" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="450" y1="138" x2="770" y2="138" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="466" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ build(app)</text>
+        <rect x="860" y="60" width="320" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="860" y1="100" x2="1180" y2="100" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1020" y="76" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«adapter»</text>
+        <text x="1020" y="92" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AcpPlugin</text>
+        <text x="876" y="120" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="860" y1="138" x2="1180" y2="138" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="876" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ build(app)</text>
+        <rect x="60" y="330" width="330" height="200" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="60" y1="370" x2="390" y2="370" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="225" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">ChatBotBuilder</text>
+        <text x="76" y="390" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="60" y1="408" x2="390" y2="408" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="76" y="424" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ new(): Self</text>
+        <text x="76" y="444" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ agent(..) / chat(..)</text>
+        <text x="76" y="464" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ build(): ChatBot</text>
+        <rect x="470" y="330" width="320" height="110" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="470" y1="370" x2="790" y2="370" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="630" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">ChatBot&lt;T&gt;</text>
+        <text x="486" y="390" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">0: T</text>
+        <rect x="870" y="330" width="310" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <line x1="870" y1="370" x2="1180" y2="370" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="1025" y="346" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«consumer»</text>
+        <text x="1025" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">HelpersPlugin</text>
+        <text x="886" y="390" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">…</text>
+        <line x1="870" y1="408" x2="1180" y2="408" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <text x="886" y="424" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">+ build(app)</text>
+        <rect x="60" y="545" width="220" height="90" rx="6" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="170" y="587" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Agent</text>
+        <text x="170" y="611" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">⇢ L4-1</text>
+        <line x1="30" y1="660" x2="1250" y2="660" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+        <line x1="30" y1="688" x2="58" y2="688" stroke="#2d3142" stroke-width="1" marker-end="url(#l5b-triangle)"/>
+        <text x="66" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">INHERITANCE</text>
+        <line x1="190" y1="688" x2="218" y2="688" stroke="#2d3142" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#l5b-triangle)"/>
+        <text x="226" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">REALIZATION</text>
+        <line x1="370" y1="688" x2="398" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l5b-diamond-filled)"/>
+        <text x="406" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">COMPOSITION</text>
+        <line x1="550" y1="688" x2="578" y2="688" stroke="#2d3142" stroke-width="1" marker-start="url(#l5b-diamond-hollow)"/>
+        <text x="586" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">AGGREGATION</text>
+        <line x1="730" y1="688" x2="758" y2="688" stroke="#4f5d75" stroke-width="1" marker-end="url(#l5b-open)"/>
+        <text x="766" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">ASSOCIATION</text>
+        <line x1="910" y1="688" x2="938" y2="688" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#l5b-open)"/>
+        <text x="946" y="691" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DEPENDENCY</text>
+      </svg>
+      </div>
+      <p class="caption">读法：三面消费加一种库嵌入；ChatBotBuilder 吃一个 Agent 吐一个终端聊天循环；HelpersPlugin 把能力包成工具。收拢未画：rig-basics 里其余非 front 插件；corpus 系列测试程序（证明内核用的，不是宿主）。缺席：没有找到 HTTP 服务、任务队列与 Web UI；provider 侧只有出向 HTTP。</p>
+    </section>
+    <footer>Rig L5 · UML class · 类成员与签名取自当前工作树 rig-cli（run）、rig-harness-protocol、rig-agent（integrations）、plugins（rig-tui、rig-basics、rig-acp）· 2026-11-07</footer>
+  </div>
+</body>
+</html>

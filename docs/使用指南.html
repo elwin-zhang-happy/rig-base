@@ -307,6 +307,8 @@ let model = acme.completion("acme-large");</code></pre>
   <p class="src">参考：<code>examples/frozen_api/p7_openai_compatible_vendor.rs</code>。<code>cargo xtask check-wires</code> 会检查「每个 provider 是不是一条 wire」。</p>
 
   <p>如果厂商不是任何现有方言，才需要手写 <code>Wire</code>：<code>describe</code> 返回描述，<code>encode</code> 是纯函数，<code>decoder</code> 每次新开。写完对照 <code>providers/openai/wire.rs</code> 的拆分方式，不要把所有逻辑塞进一个函数。</p>
+
+  <p>完整五步演示（数据 → 钩子 → wire → transport → 测试）见《<a href="设计解剖.html#demo">设计解剖</a>》§10。</p>
 </section>
 
 <section id="tool">
@@ -481,6 +483,7 @@ impl CustomEffect for Deploy {
 <section id="path">
   <h2>11 把它改造成你的基础框架：落地顺序</h2>
   <p>不要一上来就 fork 整仓。三步试错，每一步都有明确的验收标准和不通过就回退的条件。</p>
+  <p>这是通用试错顺序。本项目已定的改造方案见《<a href="改造设计.md">改造设计</a>》（M0–M6 演进路线）与图解《<a href="控制平面架构.html">控制平面架构</a>》。</p>
 
   <figure>
     <svg class="dg" viewBox="0 0 900 300" role="img" aria-label="三步落地路径，每步都有验收标准">
