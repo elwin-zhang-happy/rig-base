@@ -1,0 +1,575 @@
+<title>Rig 使用逻辑</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --surface-2:#ecefec; --fg:#141917; --muted:#5b6763;
+  --line:#d5dbd7; --accent:#9a5300; --accent-soft:#f2e3cf; --stable:#0c655e; --stable-soft:#d8ebe8;
+  --code-bg:#eef1ee; --code-fg:#1d2422;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,"Cascadia Code",monospace;
+  --measure:68ch;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1413; --surface:#161c1b; --surface-2:#1c2422; --fg:#e7ecea; --muted:#9baaa6;
+    --line:#2a3533; --accent:#e2a761; --accent-soft:#342619; --stable:#6cc8bd; --stable-soft:#16302d;
+    --code-bg:#1b2321; --code-fg:#dfe7e4; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1413; --surface:#161c1b; --surface-2:#1c2422; --fg:#e7ecea; --muted:#9baaa6;
+  --line:#2a3533; --accent:#e2a761; --accent-soft:#342619; --stable:#6cc8bd; --stable-soft:#16302d;
+  --code-bg:#1b2321; --code-fg:#dfe7e4; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); font-size:16px; line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1120px;margin:0 auto;padding-block:56px 96px}
+.eyebrow{font:500 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(32px,5vw,46px);line-height:1.15;margin:.35em 0 .3em;text-wrap:balance;letter-spacing:.01em}
+.deck{font-size:18px;line-height:1.8;color:var(--muted);max-width:var(--measure);margin:0 0 2em}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(22px,3vw,28px);line-height:1.3;margin:0 0 .6em;text-wrap:balance}
+h3{font-size:17px;font-weight:600;line-height:1.5;margin:1.8em 0 .5em}
+p,ul,ol{max-width:var(--measure)}
+p{margin:0 0 1em}
+li{margin:0 0 .4em}
+a{color:var(--stable);text-underline-offset:3px}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);color:var(--code-fg);padding:.12em .38em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0 0 .6em;font-size:13px;line-height:1.65}
+pre code{background:none;padding:0;font-size:inherit}
+.src{font-size:12px;color:var(--muted);margin:0 0 1.6em}
+figure{margin:0 0 1.8em;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 16px 0;overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;min-width:660px}
+figcaption{font-size:13px;line-height:1.65;color:var(--muted);padding:12px 2px 14px;border-top:1px solid var(--line);margin-top:14px}
+.table-wrap{overflow-x:auto;margin:0 0 1.8em}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px;line-height:1.6}
+th{text-align:left;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:8px 14px 8px 0;vertical-align:bottom}
+td{border-bottom:1px solid var(--line);padding:11px 14px 11px 0;vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+td code{white-space:nowrap}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 1.8em;max-width:var(--measure)}
+.note.stable{border-left-color:var(--stable);background:var(--stable-soft)}
+.note p:last-child{margin-bottom:0}
+.toc{display:flex;flex-wrap:wrap;gap:6px 20px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 0 8px;font-size:14px}
+.toc a{color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--fg);text-decoration:underline}
+section{margin-top:60px}
+.rule{border:0;border-top:1px solid var(--line);margin:52px 0 0}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 1.8em}
+.rung{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:16px;min-width:0}
+.rung .name{font-family:var(--mono);font-size:13px;font-weight:600;display:block;margin-bottom:6px}
+.rung .sig{font-size:13px;line-height:1.6;margin:0 0 8px}
+.rung .cost{font-size:12px;line-height:1.55;color:var(--muted);margin:0}
+.rung.a{border-top:3px solid var(--stable)}
+.rung.b{border-top:3px solid var(--stable)}
+.rung.c{border-top:3px solid var(--accent)}
+.rung.d{border-top:3px solid var(--accent)}
+.dg text{font-family:var(--sans);fill:var(--fg)}
+.dg .t-sm{font-size:12px;fill:var(--muted)}
+.dg .t-xs{font-size:10.5px;fill:var(--muted)}
+.dg .t-mono{font-family:var(--mono);font-size:11.5px;fill:var(--fg)}
+.dg .t-mono-sm{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.dg .neutral{fill:var(--surface-2);stroke:var(--line);stroke-width:1.2}
+.dg .data{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+.dg .type{fill:var(--stable-soft);stroke:var(--stable);stroke-width:1.2}
+.dg .plain{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.dg .line{stroke:var(--muted);stroke-width:1.2;fill:none}
+.dg .dashed{stroke:var(--muted);stroke-width:1.1;fill:none;stroke-dasharray:5 4}
+@media (max-width:860px){
+  .ladder{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:520px){
+  .ladder{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  body{font-size:15px}
+  .page{padding-block:36px 72px}
+  figure{padding:12px 10px 0}
+}
+</style>
+
+<div class="page">
+<header>
+  <div class="eyebrow">Usage manual · rig 0.46</div>
+  <h1>Rig 使用逻辑</h1>
+  <p class="deck">这一份按「你要做的事」组织，不按目录组织。每一节给出入口、真实签名、参考位置，以及它属于哪一层。最后一节是把它改造成你项目基础框架的落地顺序。</p>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#choose">1 先选层</a>
+  <a href="#deps">2 依赖与 feature</a>
+  <a href="#call">3 最小可用</a>
+  <a href="#io">4 换 IO</a>
+  <a href="#capability">5 加能力</a>
+  <a href="#vendor">6 接厂商</a>
+  <a href="#tool">7 加工具</a>
+  <a href="#agent">8 agent 运行时</a>
+  <a href="#ecs">9 ECS 内核</a>
+  <a href="#matrix">10 扩展点总表</a>
+  <a href="#path">11 落地顺序</a>
+  <a href="#pits">12 约束与坑</a>
+</nav>
+
+<section id="choose">
+  <h2>1 先选层：你停在哪一层</h2>
+  <p>四层是一条阶梯，可以停在任何一层。判断依据不是「哪层更先进」，而是你的产品需不需要在执行过程中介入。</p>
+
+  <div class="ladder">
+    <div class="rung a">
+      <span class="name">rig-core</span>
+      <p class="sig">只要「把请求发出去，把结果拿回来」。</p>
+      <p class="cost">agent 循环自己写。默认不含 tokio，也不含内置 HTTP。</p>
+    </div>
+    <div class="rung b">
+      <span class="name">+ rig-agent</span>
+      <p class="sig">需要多轮工具调用、hook、可暂停的一次 run。</p>
+      <p class="cost">抽象单位是「一次 run」，编排逻辑归你。</p>
+    </div>
+    <div class="rung c">
+      <span class="name">+ rig-ecs</span>
+      <p class="sig">运行中要看、拦、改；多 agent；会话恢复。</p>
+      <p class="cost">Bevy 精确锁 <code>=0.20.0</code>，你的应用要变成 Bevy App。</p>
+    </div>
+    <div class="rung d">
+      <span class="name">+ harness / plugins</span>
+      <p class="sig">产品就是终端编码 agent，想直接改它。</p>
+      <p class="cost">RIG_HOME、<code>settings.toml</code>、启动协议、终端视图。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <p>不要从 <code>rig-harness</code> 开始。它是最有主张的一层，内置了桌面编码 agent 的产品假设。把它当基础框架，你会为用不到的东西付出兼容成本。要用，也应该在你自己的内核跑通之后再决定。</p>
+  </div>
+</section>
+
+<section id="deps">
+  <h2>2 依赖与 feature</h2>
+  <p>有一个容易踩的点：<strong>facade 和 <code>rig-core</code> 的默认 feature 不一样</strong>。根包 <code>rig</code> 默认带 <code>reqwest</code> 和 <code>agent</code>；<code>rig-core</code> 默认只有 <code>derive</code> 和 <code>rustls</code>，内置 HTTP 传输是 opt-in 的。</p>
+
+<pre><code># 只要模型与契约。内置 HTTP 需要显式打开 reqwest
+rig-core = { version = "0.46", features = ["reqwest"] }
+
+# 要 agent 循环。它本身不绑 tokio
+rig-core = { version = "0.46", features = ["reqwest"] }
+rig-agent = "0.46"
+
+# 要 ECS 内核
+rig-core = { version = "0.46", features = ["reqwest"] }
+rig-memory = "0.46"
+rig-ecs = "0.46"
+
+# 或者直接用 facade：默认 reqwest + agent + derive + rustls
+rig = "0.46"</code></pre>
+  <p class="src">依据：<code>crates/rig-core/Cargo.toml</code> 的 <code>[features]</code>，根 <code>Cargo.toml</code> 的 <code>default = ["rig-core/default", "reqwest", "agent", "derive", "rustls"]</code>。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>你想要</th><th>开什么</th><th>注意</th></tr></thead>
+      <tbody>
+        <tr><td>自带 HTTP 传输</td><td><code>rig-core/reqwest</code></td><td>不开时，<code>from_env()</code> 这类不指定传输的构造函数不可用</td></tr>
+        <tr><td>不绑 tokio</td><td>用 <code>rig-agent</code>，自己驱动 future</td><td>参考 <code>examples/agent_no_tokio</code></td></tr>
+        <tr><td>WebSocket</td><td><code>rig-core/websocket</code>，原生再加 <code>tungstenite</code></td><td>wasm 上只有契约，没有内置后端</td></tr>
+        <tr><td>无 Bevy 的纯库</td><td>只依赖 <code>rig-core</code> / <code>rig-agent</code></td><td>不要把 <code>rig-ecs</code> 拖进来「备用」</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="call">
+  <h2>3 最小可用：一次调用</h2>
+  <p>最小路径只有两件事：构造一个模型，调用它。模型是 <code>Wire</code> 和 <code>Transport</code> 的组合，构造器帮你把这两半配好。</p>
+
+<pre><code>use rig_core::completion::CompletionRequest;
+use rig_core::providers::openai::{self, OpenAI};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let model = OpenAI::from_env()?.completion(openai::GPT_5_2);
+    let response = model.call(CompletionRequest::new("Say hello.")).await?;
+    println!("{}", response.text());
+    Ok(())
+}</code></pre>
+  <p class="src">参考：<code>crates/rig-core/src/driver.rs</code> 的 <code>Model</code>，以及 <code>examples/frozen_api/p1_one_prompt.rs</code>。流式版本把 <code>call</code> 换成 <code>stream</code>，逐个 <code>Item::Event</code> 消费，最后 <code>finish()</code> 拿完整响应。</p>
+
+  <div class="note stable">
+    <p>想换模型供应商时，先看它是哪种方言。OpenAI-chat 兼容的厂商不要手写实现，用下一节的 <code>Dialect</code>；这也是仓库对 provider 的硬性要求。</p>
+  </div>
+</section>
+
+<section id="io">
+  <h2>4 换掉 IO：自定义 Transport</h2>
+  <p>这是最有杠杆的一个扩展点。整个调用链里只有 <code>Transport</code> 接触 IO，所以换掉它就能得到录制、回放、代理、离线测试。</p>
+
+<pre><code>use bytes::Bytes;
+use futures::stream;
+use rig_core::driver::{Exchange, Model, Opened, Opening, Transport};
+use rig_core::providers::openai::{self, OpenAIConfig};
+use rig_core::wire::{Encoded, Wire, WireFrame};
+
+/// 对任何 HTTP wire 重放一份录制下来的回复体。
+#[derive(Clone)]
+struct Replay { body: Bytes }
+
+impl&lt;W&gt; Transport&lt;W&gt; for Replay
+where
+    W: Wire&lt;Payload = Encoded, Frame = WireFrame&gt;,
+{
+    fn send(&amp;self, payload: Encoded, _exchange: Exchange) -&gt; Opening&lt;WireFrame&gt; {
+        let frames = payload.framing.split(&amp;self.body);
+        Opening::ready(Opened::new(stream::iter(frames.into_iter().map(Ok))))
+    }
+}
+
+// 用法：wire 不变，只换 transport
+let wire = OpenAIConfig::new("unused").chat(openai::GPT_5_2);
+let model = Model::new(wire, Replay { body: recorded });</code></pre>
+  <p class="src">参考：<code>examples/frozen_api/p8_custom_transport.rs</code>。注意 <code>payload.framing</code>：帧的切分方式由 wire 决定，录制回放不用自己判断 SSE 还是 NDJSON。</p>
+</section>
+
+<section id="capability">
+  <h2>5 加一种能力：自定义 Operation</h2>
+  <p>当你要接的东西不是「聊天」也不是「嵌入」，而是一种新的交换，例如本地姿态估计、语音转写、自定义批处理，就用 <code>Operation</code> 把它声明成一个类型。声明之后，它会自动获得流式、折叠、记录、回放。</p>
+
+<pre><code>impl Operation for PoseEstimation {
+    type Request = PoseRequest;
+    type Event = FramePoses;
+    type End = ();
+    type Response = PoseTrack;
+    type Fold = PoseTrack;
+    type Emit = Free;
+
+    fn fold(_: &amp;PoseRequest, _: &amp;mut Call&lt;'_&gt;) -&gt; PoseTrack {
+        PoseTrack::default()
+    }
+
+    // 在请求到达 transport 之前校验，拒绝的请求到不了网络
+    fn prepare(request: PoseRequest, _: &amp;Descriptor&lt;'_&gt;) -&gt; Result&lt;PoseRequest, ProviderError&gt; {
+        if request.frames.is_empty() {
+            return Err(ProviderError::request("a pose request needs at least one frame"));
+        }
+        Ok(request)
+    }
+}
+
+impl Fold&lt;PoseEstimation&gt; for PoseTrack {
+    fn absorb(&amp;mut self, poses: &amp;FramePoses) -&gt; Result&lt;(), ProviderError&gt; {
+        self.frames.push(poses.clone());
+        Ok(())
+    }
+    fn finish(self, _end: (), _reply: Reply) -&gt; Result&lt;PoseTrack, ProviderError&gt; {
+        Ok(self)
+    }
+}</code></pre>
+
+  <p>再给它一个本地运行时。这里用 <code>Local</code> 这个 wire，它不编码任何协议，只负责把请求交给你的 transport：</p>
+
+<pre><code>impl Transport&lt;Local&lt;PoseEstimation&gt;&gt; for PoseRuntime {
+    fn send(&amp;self, request: PoseRequest, _: Exchange) -&gt; Opening&lt;Step&lt;PoseEstimation&gt;&gt; {
+        let runtime = self.clone();
+        let poses = stream::iter(request.frames.into_iter().enumerate())
+            .map(move |(index, frame)| Ok(Step::Event(runtime.estimate(index, &amp;frame))));
+        let end = stream::once(async { Ok::&lt;_, ProviderError&gt;(Step::End(())) });
+        Opening::ready(Opened::new(poses.chain(end)))
+    }
+}
+
+let model = Model::new(
+    Local::&lt;PoseEstimation&gt;::new("candle-pose"),
+    PoseRuntime { threshold: 0.5 },
+);</code></pre>
+  <p class="src">参考：<code>examples/frozen_api/p5_local_operation.rs</code>，完整可运行。这条路径同样适用于「调用你已有的 C++ / Python 推理服务」。</p>
+</section>
+
+<section id="vendor">
+  <h2>6 接一个厂商：用 Dialect，不要手写</h2>
+  <p>OpenAI-chat 兼容的厂商只差几个怪癖。仓库把差异做成了数据：</p>
+
+<pre><code>use rig_core::providers::openai::OpenAIConfig;
+use rig_core::providers::openai::wire::{Dialect, Quirks};
+
+pub const ACME: Dialect = Dialect::gateway("acme", "https://api.acme.test/v1", "ACME_API_KEY")
+    .with_quirks(
+        Quirks::openai()
+            .without_stream_usage()        // 流式不带 usage
+            .without_response_format()     // 不支持结构化输出
+            .done_without_finish_reason(), // [DONE] 但没有 finish_reason
+    );
+
+let acme = OpenAIConfig::from_env_with(&amp;ACME)?.client();
+let model = acme.completion("acme-large");</code></pre>
+  <p class="src">参考：<code>examples/frozen_api/p7_openai_compatible_vendor.rs</code>。<code>cargo xtask check-wires</code> 会检查「每个 provider 是不是一条 wire」。</p>
+
+  <p>如果厂商不是任何现有方言，才需要手写 <code>Wire</code>：<code>describe</code> 返回描述，<code>encode</code> 是纯函数，<code>decoder</code> 每次新开。写完对照 <code>providers/openai/wire.rs</code> 的拆分方式，不要把所有逻辑塞进一个函数。</p>
+</section>
+
+<section id="tool">
+  <h2>7 加一个工具</h2>
+  <p>工具的类型参数就是它的参数结构，schema 可以从参数类型推导（<code>args_schema</code>），也可以手写。下面是手写版，和 frozen_api 的示例一致：</p>
+
+<pre><code>use rig_core::tool::{Tool, ToolContext};
+
+#[derive(serde::Deserialize)]
+struct AddArgs { a: i64, b: i64 }
+
+#[derive(Debug, thiserror::Error)]
+#[error("math error")]
+struct MathError;
+
+struct Add;
+
+impl Tool for Add {
+    const NAME: &amp;'static str = "add";
+    type Args = AddArgs;
+    type Output = i64;
+    type Error = MathError;
+
+    fn description(&amp;self) -&gt; String { "Add two integers.".into() }
+
+    fn parameters(&amp;self) -&gt; serde_json::Value {
+        serde_json::json!({
+            "type": "object",
+            "properties": { "a": { "type": "integer" }, "b": { "type": "integer" } },
+            "required": ["a", "b"]
+        })
+    }
+
+    async fn call(&amp;self, _ctx: &amp;mut ToolContext, args: AddArgs) -&gt; Result&lt;i64, MathError&gt; {
+        Ok(args.a + args.b)
+    }
+}</code></pre>
+
+  <p>注册分两套。用 agent 运行时，把工具放进 <code>ToolSet</code> 或 agent builder；用 ECS 内核，注册到 App：</p>
+
+<pre><code>use rig_ecs::prelude::*;
+
+let mut app = App::new();
+app.add_tool(Add);</code></pre>
+  <p class="src">ECS 侧：<code>rig_ecs::tools::AppToolsExt::add_tool</code>（<code>crates/rig-ecs/src/tools.rs:244</code>）。工具 future 跑在 Bevy 的 async compute 池上，阻塞操作要自己挪到独立线程（<code>rig-tools</code> 的 <code>blocking</code> 就是这么做的）。</p>
+</section>
+
+<section id="agent">
+  <h2>8 用 agent 运行时</h2>
+  <p>三种用法，控制力从低到高。多数场景停在第一种。</p>
+
+  <h3>8.1 Builder 加 hook</h3>
+<pre><code>use rig_agent::agent::{
+    AgentBuilder, AgentHook, HookContext, ModelTurnAction, ModelTurnFinished,
+};
+
+struct RetryOnMarker { marker: &amp;'static str }
+
+impl AgentHook for RetryOnMarker {
+    async fn on_model_turn_finished(
+        &amp;self,
+        _ctx: &amp;HookContext,
+        event: ModelTurnFinished&lt;'_&gt;,
+    ) -&gt; ModelTurnAction {
+        // 检查 event.content，决定继续、重试还是停止
+        ModelTurnAction::Continue
+    }
+}
+
+let agent = AgentBuilder::new(model)
+    .preamble("You are a careful reviewer.")
+    .add_hook(RetryOnMarker { marker: "REJECT" })
+    .build();</code></pre>
+  <p class="src">参考：<code>examples/agent_with_retry_hook</code>。<code>AgentHook</code> 覆盖 run 开始、模型选择、请求前、回合结束、无效工具调用、事件分发、最终结果。默认实现全是放行，只实现你要的那几个。</p>
+
+  <h3>8.2 在运行时追加 hook</h3>
+<pre><code>let response = agent
+    .prompt("What is 2 + 5?")
+    .max_turns(2)
+    .add_hook(ToolLoggerHook)
+    .run()
+    .await?;</code></pre>
+
+  <h3>8.3 自己驱动状态机</h3>
+  <p><code>AgentRun</code> 是 sans-I/O 的：它只告诉你「现在该调模型」还是「现在该跑工具」，IO 由你做。它最有价值的性质是工具调用挂起时整个状态可序列化：</p>
+
+<pre><code>use rig_agent::run::AgentRun;
+
+// 挂起：把整个 run 存下来
+let suspended = serde_json::to_string(&amp;run)?;
+
+// 恢复：换一个进程也行，待执行的工具调用会从状态里重新发出
+let mut run: AgentRun = serde_json::from_str(&amp;suspended)?;</code></pre>
+  <p class="src">参考：<code>examples/agent_run_stepping/src/main.rs</code>，前半段是手驱循环，后半段是 hook 版。人工审批、跨进程恢复、断点续跑都建立在这个性质上。</p>
+</section>
+
+<section id="ecs">
+  <h2>9 用 ECS 内核</h2>
+  <p>内核不碰视图也不碰文件系统，所以启动它只需要两样注入：一个会话存储，一个模型来源（测试里可以用脚本模型）。</p>
+
+  <h3>9.1 最小 App</h3>
+<pre><code>use rig_ecs::prelude::*;
+use rig_ecs::session_log::SessionStore;
+use rig_memory::MemoryStore;
+
+let mut app = App::new();
+app.insert_resource(SessionStore::new(MemoryStore::default()))
+    .add_plugins((AgentPlugin, SessionLogPlugin))
+    .add_tool(Add);
+
+// 测试里推进一帧即可，不需要 ScheduleRunner
+app.update();</code></pre>
+  <p class="src">依据：<code>crates/rig-ecs/src/lib.rs</code> 的 crate 文档示例。</p>
+
+  <h3>9.2 加一条策略：阶段里的普通 system</h3>
+  <p>审批、限额、路径限制都不需要改内核。写一个查 <code>EffectRequest</code> 的系统，放进 <code>Gate</code> 阶段，写 <code>Decision</code> 即可：</p>
+
+<pre><code>use rig_ecs::prelude::*;
+
+fn no_deploys(mut effects: Query&lt;(&amp;EffectRequest, &amp;mut Decision), (ReadyToStart, PluginEffects)&gt;) {
+    for (request, mut decision) in &amp;mut effects {
+        if request.kind.name() == "deploy" {
+            decision.decide(
+                Decider::plugin("no-deploys"),
+                Outcome::refused("no deploys today"),
+            );
+        }
+    }
+}
+
+app.add_plugins(AgentPlugin)
+    .add_systems(AgentPass, no_deploys.in_set(Stage::Gate));</code></pre>
+  <p class="src">参考：<code>crates/rig-ecs/src/stage.rs</code> 的模块文档。要观察或改写结果用 <code>Stage::Review</code>；要挂起一个 effect 用 <code>HoldOf</code>。</p>
+
+  <h3>9.3 加一个宿主动作</h3>
+  <p>你自己的副作用（部署、发通知、调内部服务）不要绕过 effect 通道。声明一个 <code>CustomEffect</code>，它就会和模型调用一样被记录、被审批、被回放：</p>
+
+<pre><code>use rig_core::effect::CustomEffect;
+
+impl CustomEffect for Deploy {
+    const KIND: &amp;'static str = "deploy";
+    type Answer = DeployOutcome;
+}</code></pre>
+  <p class="src">参考：<code>crates/rig-core/src/effect/mod.rs:293</code>；处理与记录的完整例子在 <code>crates/rig-harness/PLUGINS.md</code> 的 <code>Effects of a plugin's own</code> 一节（约第 1267 行）。</p>
+
+  <h3>9.4 换存储</h3>
+  <p>实现 <code>rig_memory::Files</code> 加 <code>Store</code>（同步）或 <code>AsyncStore</code>（网络、JS promise），内核不关心后面是什么。注意会话日志有格式版本，<code>StoreOpener</code> 会拒绝别的格式。参考 <code>crates/rig-memory/src/store.rs:53</code>。</p>
+</section>
+
+<section id="matrix">
+  <h2>10 扩展点总表</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>你要做的</th><th>实现什么</th><th>位置</th><th>参考</th></tr></thead>
+      <tbody>
+        <tr><td>接一个厂商</td><td><code>Dialect</code> 或 <code>impl Wire</code> + <code>Decoder</code></td><td><code>rig-core/src/providers/openai/wire.rs</code></td><td><code>frozen_api/p7</code></td></tr>
+        <tr><td>加一种能力</td><td><code>impl Operation</code> + <code>Fold</code></td><td><code>rig-core/src/wire.rs:176</code></td><td><code>frozen_api/p5</code></td></tr>
+        <tr><td>换 IO</td><td><code>impl Transport</code></td><td><code>rig-core/src/driver.rs:214</code></td><td><code>frozen_api/p8</code></td></tr>
+        <tr><td>加工具</td><td><code>impl Tool</code></td><td><code>rig-core/src/tool/contextual.rs:32</code></td><td><code>frozen_api/p4</code></td></tr>
+        <tr><td>加策略 / 审批</td><td><code>AgentPass</code> 里 <code>Gate</code> / <code>Review</code> 系统</td><td><code>rig-ecs/src/stage.rs</code></td><td><code>PLUGINS.md</code> Gating 一节</td></tr>
+        <tr><td>加宿主动作</td><td><code>impl CustomEffect</code></td><td><code>rig-core/src/effect/mod.rs:293</code></td><td><code>PLUGINS.md:1267</code></td></tr>
+        <tr><td>换存储</td><td><code>Files</code> + <code>Store</code> / <code>AsyncStore</code></td><td><code>rig-memory/src/store.rs:53</code></td><td><code>rig-memory/README.md</code></td></tr>
+        <tr><td>改模型事实</td><td><code>Catalog::with_models_dev</code> / <code>with_overrides</code></td><td><code>rig-core/src/catalog/mod.rs</code></td><td>模块文档示例</td></tr>
+        <tr><td>加一个前端</td><td>Bevy 插件 + 公共 API</td><td><code>plugins/rig-tui</code></td><td><code>rig-harness/PLUGINS.md</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="path">
+  <h2>11 把它改造成你的基础框架：落地顺序</h2>
+  <p>不要一上来就 fork 整仓。三步试错，每一步都有明确的验收标准和不通过就回退的条件。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 300" role="img" aria-label="三步落地路径，每步都有验收标准">
+      <defs>
+        <marker id="u-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <text x="450" y="40" class="t-sm" text-anchor="middle">每一步都可以停，也都可以回退</text>
+
+      <g>
+        <rect class="type" x="30" y="70" width="250" height="96" rx="10"/>
+        <text x="50" y="98" class="t-mono">1 · 只碰 rig-core</text>
+        <text x="50" y="122" class="t-sm">自定义 Operation + Transport</text>
+        <text x="50" y="144" class="t-xs">验收：不改源码就能表达你的能力</text>
+      </g>
+      <line class="line" x1="280" y1="118" x2="316" y2="118" marker-end="url(#u-arrow)"/>
+
+      <g>
+        <rect class="data" x="320" y="70" width="250" height="96" rx="10"/>
+        <text x="340" y="98" class="t-mono">2 · 起一个 headless 内核</text>
+        <text x="340" y="122" class="t-sm">工具 + Gate + MemoryStore</text>
+        <text x="340" y="144" class="t-xs">验收：Gate 能拒绝一个调用</text>
+      </g>
+      <line class="line" x1="570" y1="118" x2="606" y2="118" marker-end="url(#u-arrow)"/>
+
+      <g>
+        <rect class="neutral" x="610" y="70" width="250" height="96" rx="10"/>
+        <text x="630" y="98" class="t-mono">3 · 选择采用模式</text>
+        <text x="630" y="122" class="t-sm">A 依赖上游 / B 快照 / C fork</text>
+        <text x="630" y="144" class="t-xs">验收：要改的文件不超过 10 个</text>
+      </g>
+
+      <path class="dashed" d="M735 166 L735 216 L155 216 L155 176" marker-end="url(#u-arrow)"/>
+      <text x="445" y="238" class="t-xs" text-anchor="middle">任何一步的摩擦超出预期，就退回上一层，换一条切割线</text>
+      <text x="445" y="266" class="t-sm" text-anchor="middle">多数项目会停在 Step 1 或 Step 2，这是正确判断，不是妥协</text>
+    </svg>
+    <figcaption>三步的顺序不能换。先验证能力表达，再验证运行时代价，最后才决定用哪种方式持有代码。反过来做，你会先背上 30 个 crate，再去验证它们是否合适。</figcaption>
+  </figure>
+
+  <h3>Step 1：只碰 rig-core</h3>
+  <p>依赖 <code>rig-core</code> 加 <code>reqwest</code>，照 <code>p5</code> 和 <code>p8</code> 写一个你自己的 <code>Operation</code> 和一个 <code>Transport</code>，用录制的数据跑通。</p>
+  <p><strong>验收</strong>：在不修改 rig 源码的前提下，你能表达自己的模型能力，并且同一份数据既能实时跑也能回放跑。如果这一步就卡住，说明你需要的是改 wire 或 driver 的内部，直接进入 B 模式（vendor 快照），别再往上加层。</p>
+
+  <h3>Step 2：起一个 headless 内核</h3>
+  <p>按 9.1 起一个 App，加一个工具、一条 Gate、一个 <code>MemoryStore</code>，在测试里推完一个 turn。</p>
+  <p><strong>验收</strong>：Gate 能拒绝一个工具调用，会话能落盘并恢复。如果 Bevy 带来的复杂度超过你对「可介入」的需求，回到 Step 1 停在 <code>rig-agent</code>。这是最常见的正确结论。</p>
+
+  <h3>Step 3：决定怎么持有代码</h3>
+  <p>按摩擦点的位置选，不按代码量选：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>摩擦点</th><th>模式</th><th>做法</th></tr></thead>
+      <tbody>
+        <tr><td>都在扩展点里（wire、tool、gate、store）</td><td>A 依赖上游</td><td>只用发布版，扩展写在自己的 crate</td></tr>
+        <tr><td>在 wire / driver / turn 的内部行为里</td><td>B 快照</td><td>vendor 一个固定 tag，只维护改过的文件，保留上游测试</td></tr>
+        <tr><td>编排模型与它结构不同（例如图编排是一等公民）</td><td>C fork</td><td>保留 core / agent / ecs / memory / cassette，丢掉 harness、cli、plugins、corpus</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>验收</strong>：你能写出一份「我们会改的文件清单」。如果超过 10 个文件，说明你在跟上游结构对抗，重新考虑切割线。</p>
+
+  <div class="note">
+    <p>如果选 C，先确认 <code>bevy = "=0.20.0"</code> 与你的项目不冲突。这是唯一的硬阻塞：Bevy 版本是精确锁，不是范围。</p>
+  </div>
+</section>
+
+<section id="pits">
+  <h2>12 约束与坑</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>坑</th><th>现象</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td><code>rig-core</code> 默认没有 <code>reqwest</code></td><td><code>from_env()</code> 找不到或没有默认传输</td><td>显式开 <code>features = ["reqwest"]</code>，或者改用 facade <code>rig</code></td></tr>
+        <tr><td>Bevy 精确锁 <code>=0.20.0</code></td><td>与已有 Bevy 项目版本冲突，Cargo 无法同时满足</td><td>把 rig-ecs 隔离到独立 crate；或不上 ECS 层</td></tr>
+        <tr><td>MSRV 1.97.1</td><td>老工具链编译失败</td><td>固定 <code>rust-toolchain.toml</code>，CI 用同一版本</td></tr>
+        <tr><td>feature 统一是全局的</td><td>你的 JSON 键顺序或浮点解析行为被别的 crate 改变</td><td>在 workspace 根显式声明 <code>serde_json</code> 的 feature，别依赖默认</td></tr>
+        <tr><td>会话格式有版本</td><td><code>StoreOpener</code> 拒绝别的格式，升级即迁移</td><td>尽早冻结自己的格式；或只用自己的 store</td></tr>
+        <tr><td>pre-1.0 破坏性变更</td><td>每周都可能改 API</td><td>锁一个快照 tag，不追 main；升级时看 <code>MIGRATING.md</code></td></tr>
+        <tr><td>仓库 lint 很严</td><td>fork 后 <code>unwrap</code> / <code>expect</code> / 索引都会报错，测试也一样</td><td>接受它，或者只在你自己的 crate 里放宽</td></tr>
+        <tr><td>工具阻塞会占线程</td><td>async compute 池被 <code>std::fs</code> 或 <code>Command</code> 卡住</td><td>阻塞工作挪到独立线程，照 <code>rig-tools</code> 的 <code>blocking</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note stable">
+    <p>最后一条使用建议：把 <code>examples/frozen_api/</code> 的八个程序当成你的改造基线。它们钉住的正好是你要接的八个方向；每次改动之后跑一遍，比读文档可靠。</p>
+  </div>
+</section>
+
+</div>

@@ -1,0 +1,471 @@
+  <title>Rig 契约架构</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Noto+Serif+SC:wght@400&family=Noto+Sans+SC:wght@400;500;600&display=swap">
+  <style>
+    /* Layout: a technical report. One centred column, figures full-bleed inside
+       an overflow container, owner labels in a monospace gutter. */
+    :root {
+      --color-paper:  #f3f4f3;
+      --color-panel:  #ffffff;
+      --color-ink:    #20262c;
+      --color-muted:  #5c6672;
+      --color-accent: #0d6b5d;
+      --color-signal: #a4532b;
+      --color-rule:   rgba(32,38,44,0.14);
+      --color-fill:   rgba(13,107,93,0.06);
+      --font-sans:  'Geist', 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif;
+      --font-mono:  'Geist Mono', ui-monospace, 'SF Mono', monospace;
+      color-scheme: light;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      padding-block: 3rem 4rem;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      -webkit-font-smoothing: antialiased;
+    }
+    .frame { max-width: 1340px; margin: 0 auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.65rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.7rem, 2.6vw + 0.8rem, 2.4rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+      text-wrap: balance;
+    }
+    .lede {
+      color: var(--color-muted);
+      font-size: 0.94rem;
+      line-height: 1.75;
+      max-width: 50rem;
+    }
+    section { margin-top: 3.75rem; }
+    h2 {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.5rem;
+      text-wrap: balance;
+    }
+    .section-note {
+      color: var(--color-muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      max-width: 52rem;
+      margin-bottom: 1.4rem;
+    }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    svg { display: block; width: 100%; height: auto; }
+    figure { margin: 0; }
+    figcaption {
+      font-family: var(--font-mono);
+      font-size: 0.69rem;
+      line-height: 1.8;
+      color: var(--color-muted);
+      margin-top: 0.9rem;
+      max-width: 62rem;
+    }
+    /* diagram primitives */
+    .dg-box { fill: var(--color-panel); stroke: var(--color-rule); stroke-width: 1; }
+    .dg-box-accent { fill: var(--color-fill); stroke: var(--color-accent); stroke-width: 1.2; }
+    .dg-box-dash { fill: none; stroke: var(--color-rule); stroke-width: 1; stroke-dasharray: 4 4; }
+    .dg-line { stroke: var(--color-muted); stroke-width: 1.2; fill: none; }
+    .dg-line-accent { stroke: var(--color-accent); stroke-width: 1.4; fill: none; }
+    .dg-line-dash { stroke: var(--color-muted); stroke-width: 1.1; fill: none; stroke-dasharray: 4 4; }
+    .dg-title { font-family: var(--font-sans); font-size: 13px; font-weight: 600; fill: var(--color-ink); }
+    .dg-sub { font-family: var(--font-sans); font-size: 11px; fill: var(--color-muted); }
+    .dg-code { font-family: var(--font-mono); font-size: 11px; fill: var(--color-ink); }
+    .dg-note { font-family: var(--font-sans); font-size: 10.5px; fill: var(--color-muted); }
+    .dg-label { font-family: var(--font-mono); font-size: 9.5px; fill: var(--color-muted); letter-spacing: 0.04em; }
+    .dg-owner { font-family: var(--font-mono); font-size: 10px; fill: var(--color-muted); letter-spacing: 0.06em; }
+    .dg-pill { fill: var(--color-panel); stroke: var(--color-rule); }
+    .dg-pill-text { font-family: var(--font-mono); font-size: 10px; fill: var(--color-ink); }
+    svg text { font-variant-numeric: tabular-nums; }
+
+    /* inventory table */
+    .table-wrap { overflow-x: auto; margin-top: 0.5rem; }
+    table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.85rem; }
+    caption { text-align: left; font-family: var(--font-mono); font-size: 0.69rem; color: var(--color-muted); padding-bottom: 0.7rem; }
+    th {
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      padding: 0 0.9rem 0.55rem 0;
+      border-bottom: 1px solid var(--color-rule);
+      white-space: nowrap;
+    }
+    td { padding: 0.62rem 0.9rem 0.62rem 0; border-bottom: 1px solid var(--color-rule); vertical-align: top; line-height: 1.55; }
+    td:first-child { font-family: var(--font-mono); font-size: 0.79rem; white-space: nowrap; }
+    td.num { font-variant-numeric: tabular-nums; color: var(--color-muted); white-space: nowrap; }
+    tr.load td:first-child { color: var(--color-accent); font-weight: 500; }
+
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 2.75rem; }
+    .card { background: var(--color-panel); border: 1px solid var(--color-rule); border-radius: 5px; padding: 1.3rem; min-width: 0; }
+    .card .eyebrow { margin-bottom: 0.55rem; }
+    .card h3 { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.55rem; }
+    .card p { font-size: 0.84rem; line-height: 1.7; color: var(--color-muted); }
+    .card p + p { margin-top: 0.6rem; }
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.78em;
+      color: var(--color-ink);
+      background: rgba(32,38,44,0.055);
+      padding: 0.08rem 0.28rem;
+      border-radius: 3px;
+    }
+    footer {
+      margin-top: 3.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-rule);
+      font-family: var(--font-mono);
+      font-size: 0.69rem;
+      line-height: 1.8;
+      color: var(--color-muted);
+    }
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <div class="frame">
+    <p class="eyebrow">Rig · contract architecture</p>
+    <h1>五个契约，一个调用骨架</h1>
+    <p class="lede">
+      rig-core 把「调一次模型」拆成五个互相不认识的契约。这张页说明它们各自被什么驱动、谁实现、以及在哪个点上被装配起来。所有数字取自当前工作树。
+    </p>
+
+    <section>
+      <p class="eyebrow">图 1 · type lattice</p>
+      <h2>契约之间是参数化关系，不是分层关系</h2>
+      <p class="section-note">
+        每一个契约锚定在一个独立的变化源上。它们在类型上互相引用：<code>Wire</code> 绑定一种 <code>Operation</code>，<code>Transport</code> 绑定一个具体的 <code>Wire</code>，<code>Model</code> 把后两者配成一对。<code>DynModel</code> 是这套参数在运行时的擦除形式。
+      </p>
+      <figure>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1280 640" style="min-width:1180px" role="img" aria-label="类型格：Operation 定义一次调用的关联类型，Wire 绑定一种 Operation 并把请求编码成 Payload，Transport 按 Wire 的 Payload 与 Frame 搬运一个回复，Model 把 wire 与 transport 配对，DynModel 擦除两者只保留操作。">
+            <defs>
+              <marker id="f1-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#5c6672"/>
+              </marker>
+            </defs>
+
+            <!-- Operation -->
+            <rect class="dg-box" x="40" y="80" width="290" height="210" rx="6"/>
+            <text class="dg-title" x="60" y="108">Operation</text>
+            <text class="dg-sub" x="60" y="128">9 个 · 由「要模型做什么」决定</text>
+            <text class="dg-code" x="60" y="158">type Request / Event</text>
+            <text class="dg-code" x="60" y="178">type End / Response</text>
+            <text class="dg-code" x="60" y="198">type Fold · type Emit</text>
+            <text class="dg-code" x="60" y="218">fn prepare(request, wire)</text>
+            <text class="dg-code" x="60" y="238">fn observed_usage(end)</text>
+            <text class="dg-note" x="60" y="266">Completion · Embedding · Rerank · Verify</text>
+
+            <!-- Wire -->
+            <rect class="dg-box" x="400" y="80" width="360" height="210" rx="6"/>
+            <text class="dg-title" x="420" y="108">Wire</text>
+            <text class="dg-sub" x="420" y="128">43 个 · 由「厂商协议」决定</text>
+            <text class="dg-code" x="420" y="156">type Op: Operation</text>
+            <text class="dg-code" x="420" y="174">type Payload / Frame / Event</text>
+            <text class="dg-code" x="420" y="192">fn describe() → Descriptor</text>
+            <text class="dg-code" x="420" y="210">fn encode(req, mode) → Payload</text>
+            <text class="dg-code" x="420" y="228">fn decoder&lt;'id&gt;() → Decoder&lt;'id&gt;</text>
+            <text class="dg-note" x="420" y="256">纯函数：不碰 socket，不读环境</text>
+            <text class="dg-note" x="420" y="272">Decoder 带生命周期，每个回复一个新状态机</text>
+
+            <!-- Transport -->
+            <rect class="dg-box" x="860" y="80" width="380" height="210" rx="6"/>
+            <text class="dg-title" x="880" y="108">Transport</text>
+            <text class="dg-sub" x="880" y="128">十几个 · 由「怎么搬运」决定</text>
+            <text class="dg-code" x="880" y="158">fn send(payload, exchange)</text>
+            <text class="dg-code" x="900" y="176">→ Opening&lt;W::Frame&gt;</text>
+            <text class="dg-note" x="880" y="206">只有一个方法</text>
+            <text class="dg-note" x="880" y="230">reqwest · tungstenite · Gemini gRPC</text>
+            <text class="dg-note" x="880" y="246">Bedrock Runtime · Vertex · Candle</text>
+            <text class="dg-note" x="880" y="262">进程内 runtime（Local） · 录制回放</text>
+
+            <!-- arrows -->
+            <line class="dg-line" x1="332" y1="185" x2="392" y2="185" marker-end="url(#f1-a)"/>
+            <text class="dg-label" x="362" y="176" text-anchor="middle">Op</text>
+            <line class="dg-line" x1="762" y1="185" x2="852" y2="185" marker-end="url(#f1-a)"/>
+            <text class="dg-label" x="807" y="176" text-anchor="middle">Payload / Frame</text>
+
+            <!-- Model -->
+            <rect class="dg-box-accent" x="400" y="360" width="840" height="110" rx="6"/>
+            <text class="dg-title" x="420" y="388">Model&lt;W, T = DynHttpClient&gt;</text>
+            <text class="dg-code" x="420" y="412">pub wire: W     pub transport: T     prepared（跨请求的 history memo）     idle_timeout</text>
+            <text class="dg-note" x="420" y="440">装配只有这一句：把 wire 和 transport 放进同一个结构体</text>
+            <line class="dg-line-dash" x1="580" y1="292" x2="580" y2="352" marker-end="url(#f1-a)"/>
+            <line class="dg-line-dash" x1="1050" y1="292" x2="1050" y2="352" marker-end="url(#f1-a)"/>
+            <text class="dg-label" x="592" y="328">配对</text>
+
+            <!-- DynModel -->
+            <rect class="dg-box-dash" x="560" y="520" width="560" height="76" rx="6"/>
+            <text class="dg-title" x="580" y="548">DynModel&lt;Op&gt;</text>
+            <text class="dg-note" x="580" y="572">对象安全的镜像：擦除 W 与 T，只保留操作</text>
+            <line class="dg-line" x1="820" y1="472" x2="820" y2="512" marker-end="url(#f1-a)"/>
+            <text class="dg-label" x="832" y="498">擦除</text>
+          </svg>
+        </div>
+        <figcaption>
+          <code>Operation</code> 决定有哪些类型，<code>Wire</code> 决定这些类型在某个协议里长什么样，<code>Transport</code> 只认 <code>Payload</code> 和 <code>Frame</code> 两个关联类型。三者之间没有继承，只有参数化：新增一个轴不会触碰另外两个轴。
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <p class="eyebrow">图 2 · call path</p>
+      <h2>一次调用经过谁</h2>
+      <p class="section-note">
+        左侧标签是每一步的契约归属。<code>stream</code> 与 <code>call</code> 走的是同一条路径，只在最后一步分开。<code>call</code> 就是「开一条流，再把它读完」。
+      </p>
+      <figure>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1180 860" style="min-width:1000px" role="img" aria-label="调用路径：请求依次经过 Operation 的 prepare、Wire 的 encode、Transport 的 send、frames、Decoder 的解码，之后在 stream 与 call 之间分岔，最后都经 Fold 收敛为 Response。">
+            <defs>
+              <marker id="f2-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#5c6672"/>
+              </marker>
+            </defs>
+
+            <!-- owner gutter -->
+            <text class="dg-owner" x="250" y="76" text-anchor="end">CALLER</text>
+            <text class="dg-owner" x="250" y="166" text-anchor="end">OPERATION</text>
+            <text class="dg-owner" x="250" y="256" text-anchor="end">WIRE</text>
+            <text class="dg-owner" x="250" y="346" text-anchor="end">TRANSPORT</text>
+            <text class="dg-owner" x="250" y="436" text-anchor="end">TRANSPORT</text>
+            <text class="dg-owner" x="250" y="530" text-anchor="end">WIRE</text>
+            <text class="dg-owner" x="250" y="626" text-anchor="end">DRIVER</text>
+            <text class="dg-owner" x="250" y="716" text-anchor="end">OPERATION</text>
+            <text class="dg-owner" x="250" y="800" text-anchor="end">CALLER</text>
+
+            <!-- rows -->
+            <rect class="dg-box" x="300" y="40" width="580" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="78">CompletionRequest { messages, tools, options, … }</text>
+
+            <rect class="dg-box" x="300" y="130" width="580" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="158">Operation::prepare(request, &amp;Descriptor)</text>
+            <text class="dg-note" x="322" y="178">整形请求，或拒绝没有任何厂商能回答的请求</text>
+
+            <rect class="dg-box" x="300" y="220" width="580" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="248">Wire::encode(request, mode) → Payload</text>
+            <text class="dg-note" x="322" y="268">纯函数：只能读 self、request、mode</text>
+
+            <rect class="dg-box" x="300" y="310" width="580" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="338">Transport::send(payload, exchange) → Opening</text>
+            <text class="dg-note" x="322" y="358">首次 poll 才真正发出</text>
+
+            <rect class="dg-box" x="300" y="400" width="580" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="428">frames: Result&lt;Frame, ProviderError&gt;</text>
+            <text class="dg-note" x="322" y="448">打开之后的失败，是流的最后一帧</text>
+
+            <rect class="dg-box" x="300" y="490" width="580" height="72" rx="5"/>
+            <text class="dg-code" x="322" y="518">Decoder::classify(frame) → decode(event, out)</text>
+            <text class="dg-note" x="322" y="538">out.event(..) 逐步交付，out.end(..) 结束回复</text>
+
+            <line class="dg-line" x1="590" y1="106" x2="590" y2="122" marker-end="url(#f2-a)"/>
+            <line class="dg-line" x1="590" y1="196" x2="590" y2="212" marker-end="url(#f2-a)"/>
+            <line class="dg-line" x1="590" y1="286" x2="590" y2="302" marker-end="url(#f2-a)"/>
+            <line class="dg-line" x1="590" y1="376" x2="590" y2="392" marker-end="url(#f2-a)"/>
+            <line class="dg-line" x1="590" y1="466" x2="590" y2="482" marker-end="url(#f2-a)"/>
+
+            <!-- fork -->
+            <path class="dg-line" d="M590 564 L590 576 L435 576 L435 584" marker-end="url(#f2-a)"/>
+            <path class="dg-line" d="M590 564 L590 576 L745 576 L745 584" marker-end="url(#f2-a)"/>
+
+            <rect class="dg-box-accent" x="300" y="590" width="270" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="618">stream() → Streamed&lt;Op&gt;</text>
+            <text class="dg-note" x="322" y="638">逐帧交给你</text>
+
+            <rect class="dg-box-accent" x="610" y="590" width="270" height="64" rx="5"/>
+            <text class="dg-code" x="632" y="618">call() → finish()</text>
+            <text class="dg-note" x="632" y="638">当场折完</text>
+
+            <path class="dg-line" d="M435 656 L435 668 L590 668 L590 674" marker-end="url(#f2-a)"/>
+            <path class="dg-line" d="M745 656 L745 668 L590 668" />
+
+            <rect class="dg-box" x="300" y="680" width="580" height="64" rx="5"/>
+            <text class="dg-code" x="322" y="708">Fold::finish(end, Reply) → Response</text>
+            <text class="dg-note" x="322" y="728">Reply 带 provider 名、raw 文档、transport request id</text>
+
+            <line class="dg-line" x1="590" y1="746" x2="590" y2="762" marker-end="url(#f2-a)"/>
+
+            <rect class="dg-box" x="300" y="770" width="580" height="52" rx="5"/>
+            <text class="dg-code" x="322" y="801">CompletionResponse</text>
+
+            <!-- right annotations -->
+            <text class="dg-note" x="906" y="166">不合规的请求在这里被挡下</text>
+            <text class="dg-note" x="906" y="256">wire 没有任何 IO 能力</text>
+            <text class="dg-note" x="906" y="346">换传输不改语义</text>
+            <text class="dg-note" x="906" y="538">两种模式共用同一个 decoder</text>
+            <text class="dg-note" x="906" y="626">唯一的分岔点</text>
+            <text class="dg-note" x="906" y="716">流式回复在读完时也走这里</text>
+          </svg>
+        </div>
+        <figcaption>
+          关键在最后两行：<code>call</code> 不是另一条实现路径，它是 <code>open(.., Mode::Unary, ..)</code> 之后调一次 <code>finish()</code>。所以 unary 与 streaming 共享同一个 decoder、同一个 fold、同一个 response 构造器；只有 idle 超时是 streaming 独有的。
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <p class="eyebrow">图 3 · dialects</p>
+      <h2>厂商差异落在数据里</h2>
+      <p class="section-note">
+        OpenAI 方言有 25 个常量，但只有一个 Chat wire。每家厂商把差异写成一份 <code>Quirks</code>，编码器读这份数据，而不是被复制 25 遍。
+      </p>
+      <figure>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1280 560" style="min-width:1180px" role="img" aria-label="方言复用：25 个方言常量各自携带一份 Quirks 数据，全部喂给同一个 Chat wire 的 encode、decoder、fold 与 reassembler。">
+            <defs>
+              <marker id="f3-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#5c6672"/>
+              </marker>
+              <marker id="f3-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#0d6b5d"/>
+              </marker>
+            </defs>
+
+            <text class="dg-note" x="40" y="128">25 个 Dialect 常量</text>
+
+            <!-- pills: 4 x 5 -->
+            <g>
+              <rect class="dg-pill" x="40" y="150" width="100" height="28" rx="14"/><text class="dg-pill-text" x="90" y="168" text-anchor="middle">openai</text>
+              <rect class="dg-pill" x="148" y="150" width="100" height="28" rx="14"/><text class="dg-pill-text" x="198" y="168" text-anchor="middle">azure</text>
+              <rect class="dg-pill" x="256" y="150" width="100" height="28" rx="14"/><text class="dg-pill-text" x="306" y="168" text-anchor="middle">deepseek</text>
+              <rect class="dg-pill" x="364" y="150" width="100" height="28" rx="14"/><text class="dg-pill-text" x="414" y="168" text-anchor="middle">groq</text>
+
+              <rect class="dg-pill" x="40" y="186" width="100" height="28" rx="14"/><text class="dg-pill-text" x="90" y="204" text-anchor="middle">together</text>
+              <rect class="dg-pill" x="148" y="186" width="100" height="28" rx="14"/><text class="dg-pill-text" x="198" y="204" text-anchor="middle">mistral</text>
+              <rect class="dg-pill" x="256" y="186" width="100" height="28" rx="14"/><text class="dg-pill-text" x="306" y="204" text-anchor="middle">ollama</text>
+              <rect class="dg-pill" x="364" y="186" width="100" height="28" rx="14"/><text class="dg-pill-text" x="414" y="204" text-anchor="middle">xai</text>
+
+              <rect class="dg-pill" x="40" y="222" width="100" height="28" rx="14"/><text class="dg-pill-text" x="90" y="240" text-anchor="middle">openrouter</text>
+              <rect class="dg-pill" x="148" y="222" width="100" height="28" rx="14"/><text class="dg-pill-text" x="198" y="240" text-anchor="middle">perplexity</text>
+              <rect class="dg-pill" x="256" y="222" width="100" height="28" rx="14"/><text class="dg-pill-text" x="306" y="240" text-anchor="middle">huggingface</text>
+              <rect class="dg-pill" x="364" y="222" width="100" height="28" rx="14"/><text class="dg-pill-text" x="414" y="240" text-anchor="middle">llamacpp</text>
+
+              <rect class="dg-pill" x="40" y="258" width="100" height="28" rx="14"/><text class="dg-pill-text" x="90" y="276" text-anchor="middle">minimax</text>
+              <rect class="dg-pill" x="148" y="258" width="100" height="28" rx="14"/><text class="dg-pill-text" x="198" y="276" text-anchor="middle">moonshot</text>
+              <rect class="dg-pill" x="256" y="258" width="100" height="28" rx="14"/><text class="dg-pill-text" x="306" y="276" text-anchor="middle">zai</text>
+              <rect class="dg-pill" x="364" y="258" width="100" height="28" rx="14"/><text class="dg-pill-text" x="414" y="276" text-anchor="middle">chatgpt</text>
+
+              <rect class="dg-pill" x="40" y="294" width="100" height="28" rx="14"/><text class="dg-pill-text" x="90" y="312" text-anchor="middle">copilot</text>
+              <rect class="dg-pill" x="148" y="294" width="100" height="28" rx="14"/><text class="dg-pill-text" x="198" y="312" text-anchor="middle">venice</text>
+              <rect class="dg-pill" x="256" y="294" width="100" height="28" rx="14"/><text class="dg-pill-text" x="306" y="312" text-anchor="middle">hyperbolic</text>
+              <rect class="dg-pill" x="364" y="294" width="100" height="28" rx="14"/><text class="dg-pill-text" x="414" y="312" text-anchor="middle">… 共 25</text>
+            </g>
+            <text class="dg-note" x="40" y="346">每个常量：name、base_url、api_key_env、quirks</text>
+
+            <!-- arrow into chat wire -->
+            <line class="dg-line" x1="472" y1="236" x2="548" y2="236" marker-end="url(#f3-a)"/>
+            <text class="dg-label" x="510" y="228" text-anchor="middle">同一套</text>
+
+            <!-- Chat wire -->
+            <rect class="dg-box-accent" x="556" y="150" width="330" height="180" rx="6"/>
+            <text class="dg-title" x="576" y="178">Chat wire · 1 份</text>
+            <text class="dg-sub" x="576" y="196">openai/wire/chat.rs</text>
+            <text class="dg-code" x="576" y="224">fn encode(..) → Payload</text>
+            <text class="dg-code" x="576" y="244">fn decoder() → Decoder</text>
+            <text class="dg-code" x="576" y="264">fn reassembler() → Reassemble</text>
+            <text class="dg-code" x="576" y="284">Fold&lt;Completion&gt;</text>
+            <text class="dg-note" x="576" y="310">25 家厂商共用的唯一实现</text>
+
+            <!-- Quirks -->
+            <rect class="dg-box" x="946" y="150" width="294" height="180" rx="6"/>
+            <text class="dg-title" x="966" y="178">Quirks · 纯数据</text>
+            <text class="dg-sub" x="966" y="196">openai/wire.rs</text>
+            <text class="dg-code" x="966" y="224">routing · auth · paths</text>
+            <text class="dg-code" x="966" y="244">supports_tools · output_cap</text>
+            <text class="dg-code" x="966" y="264">later_system · finishes</text>
+            <text class="dg-code" x="966" y="284">reasoning_field · strict_schema</text>
+            <text class="dg-note" x="966" y="310">编码器读这份数据，不复制代码</text>
+
+            <line class="dg-line-accent" x1="946" y1="236" x2="894" y2="236" marker-end="url(#f3-b)"/>
+            <text class="dg-label" x="920" y="258" text-anchor="middle">读</text>
+
+            <!-- comparison -->
+            <line class="dg-line" x1="40" y1="404" x2="1240" y2="404"/>
+            <text class="dg-label" x="40" y="438">不拆</text>
+            <text class="dg-code" x="120" y="438">每一种组合一个具体类型：9 操作 × 40 wire × 十几个 transport</text>
+            <text class="dg-label" x="40" y="472">拆开</text>
+            <text class="dg-code" x="120" y="472">每个轴各写一遍：9 + 40 + 十几个，交叉的地方由泛型承担</text>
+            <text class="dg-note" x="40" y="506">新增一家厂商 = 一个常量 + 一份 Quirks，约 350 行以内的配置代码（见 providers/deepseek.rs）。</text>
+          </svg>
+        </div>
+        <figcaption>
+          这不是「少写代码」的技巧，是让差异可序列化的设计：<code>Dialect</code> 以名字存进配置，读回来时按名字在本 build 的注册表里解析，所以一份 <code>ProviderConfig</code> 可以落盘、可以跨进程传递。
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <p class="eyebrow">inventory</p>
+      <h2>契约清单</h2>
+      <div class="table-wrap">
+        <table>
+          <caption>实现数按当前工作树的 impl 统计，含 test-support 与插件。</caption>
+          <thead>
+            <tr><th>契约</th><th>实现</th><th>变化的来源</th><th>装配点</th></tr>
+          </thead>
+          <tbody>
+            <tr class="load"><td>Operation</td><td class="num">9</td><td>模型要做什么</td><td>操作语义本身</td></tr>
+            <tr class="load"><td>Wire</td><td class="num">43</td><td>厂商协议</td><td>describe / encode / decoder</td></tr>
+            <tr class="load"><td>Transport</td><td class="num">~15</td><td>数据怎么搬</td><td>driver::Model 的第二个类型参数</td></tr>
+            <tr class="load"><td>Fold</td><td class="num">5</td><td>一次回复怎么攒</td><td>Operation::Fold</td></tr>
+            <tr class="load"><td>Decoder</td><td class="num">每 wire 一个</td><td>单帧怎么读</td><td>Wire::decoder()</td></tr>
+            <tr><td>Tool</td><td class="num">74</td><td>能力</td><td>AgentBuilder / ToolServer</td></tr>
+            <tr><td>VectorStoreIndex</td><td class="num">14</td><td>后端</td><td>检索与写入</td></tr>
+            <tr><td>ProviderExtension</td><td class="num">25</td><td>厂商私有参数</td><td>ProviderOptions 按 key 取</td></tr>
+            <tr><td>ReplayTarget</td><td class="num">7</td><td>跨厂商历史回放</td><td>history::adapt</td></tr>
+            <tr><td>Serve / Intercept</td><td class="num">22 / 13</td><td>派发与中间件</td><td>ErasedHandler 注册表</td></tr>
+            <tr><td>Reassemble</td><td class="num">3</td><td>流式回复的 raw 重建</td><td>Wire::reassembler</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="cards">
+      <div class="card">
+        <p class="eyebrow">why</p>
+        <h3>乘法被拆成加法</h3>
+        <p>三个正交维度相乘时，一个具体类型要同时知道操作、协议和传输。拆开之后每个轴各写一遍，交叉处由泛型承担。</p>
+        <p>Rust 不能给别人的类型加方法，所以「行为注入」也只能落在 trait 上，<code>SpanCombinator</code>、<code>Lenient</code> 这类单实现契约就是这么来的。</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">merge candidates</p>
+        <h3>哪些可以合</h3>
+        <p>判据很简单：实现数 ≥ 3 且跨 crate，是边界，别动；只有 1 个实现且没有外部实现者，是合并候选。</p>
+        <p>按这个口径，<code>VectorDistance</code>、<code>ToolCallback</code>、<code>TextProcessor</code> 可以直接变成方法；<code>Clock</code> 是故意的注入点，留下来。</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">extend</p>
+        <h3>加一家厂商要做什么</h3>
+        <p>写一个 <code>const Dialect</code>：名字、base URL、环境变量名、一份 <code>Quirks</code>。真正的协议差异用 <code>DialectHooks</code> 的四个函数指针补。</p>
+        <p>不要新写 completion model、请求结构体或消息转换，那是这套契约明确禁止的做法。</p>
+      </div>
+    </div>
+
+    <footer>
+      依据 crates/rig-core 的 trait 签名与 impl 数量整理 · 2026-11-06 · rig 0.46<br>
+      配套：rig-crate-map.html（crate 依赖与启动链）
+    </footer>
+  </div>

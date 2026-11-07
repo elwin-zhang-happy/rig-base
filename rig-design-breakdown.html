@@ -1,0 +1,740 @@
+<title>Rig 设计拆解</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --surface-2:#ecefec; --fg:#141917; --muted:#5b6763;
+  --line:#d5dbd7; --accent:#9a5300; --accent-soft:#f2e3cf; --stable:#0c655e; --stable-soft:#d8ebe8;
+  --code-bg:#eef1ee; --code-fg:#1d2422;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,"Cascadia Code",monospace;
+  --measure:68ch;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1413; --surface:#161c1b; --surface-2:#1c2422; --fg:#e7ecea; --muted:#9baaa6;
+    --line:#2a3533; --accent:#e2a761; --accent-soft:#342619; --stable:#6cc8bd; --stable-soft:#16302d;
+    --code-bg:#1b2321; --code-fg:#dfe7e4; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1413; --surface:#161c1b; --surface-2:#1c2422; --fg:#e7ecea; --muted:#9baaa6;
+  --line:#2a3533; --accent:#e2a761; --accent-soft:#342619; --stable:#6cc8bd; --stable-soft:#16302d;
+  --code-bg:#1b2321; --code-fg:#dfe7e4; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); font-size:16px; line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1120px;margin:0 auto;padding-block:56px 96px}
+.eyebrow{font:500 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(32px,5vw,46px);line-height:1.15;margin:.35em 0 .3em;text-wrap:balance;letter-spacing:.01em}
+.deck{font-size:18px;line-height:1.8;color:var(--muted);max-width:var(--measure);margin:0 0 2em}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(22px,3vw,28px);line-height:1.3;margin:0 0 .6em;text-wrap:balance}
+h3{font-size:17px;font-weight:600;line-height:1.5;margin:1.8em 0 .5em}
+p,ul,ol{max-width:var(--measure)}
+p{margin:0 0 1em}
+li{margin:0 0 .4em}
+a{color:var(--stable);text-underline-offset:3px}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);color:var(--code-fg);padding:.12em .38em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0 0 1.2em;font-size:13px;line-height:1.65}
+pre code{background:none;padding:0;font-size:inherit}
+figure{margin:0 0 1.8em;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 16px 0;overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;min-width:660px}
+figcaption{font-size:13px;line-height:1.65;color:var(--muted);padding:12px 2px 14px;border-top:1px solid var(--line);margin-top:14px;max-width:none}
+.table-wrap{overflow-x:auto;margin:0 0 1.8em}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px;line-height:1.6}
+th{text-align:left;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:8px 14px 8px 0;vertical-align:bottom}
+td{border-bottom:1px solid var(--line);padding:11px 14px 11px 0;vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+td code{white-space:nowrap}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 1.8em;max-width:var(--measure)}
+.note.stable{border-left-color:var(--stable);background:var(--stable-soft)}
+.note p:last-child{margin-bottom:0}
+.toc{display:flex;flex-wrap:wrap;gap:6px 20px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 0 8px;font-size:14px}
+.toc a{color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--fg);text-decoration:underline}
+section{margin-top:60px}
+.rule{border:0;border-top:1px solid var(--line);margin:52px 0 0}
+.dg text{font-family:var(--sans);fill:var(--fg)}
+.dg .t-sm{font-size:12px;fill:var(--muted)}
+.dg .t-xs{font-size:10.5px;fill:var(--muted)}
+.dg .t-mono{font-family:var(--mono);font-size:11.5px;fill:var(--fg)}
+.dg .t-mono-sm{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.dg .neutral{fill:var(--surface-2);stroke:var(--line);stroke-width:1.2}
+.dg .data{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+.dg .type{fill:var(--stable-soft);stroke:var(--stable);stroke-width:1.2}
+.dg .plain{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.dg .line{stroke:var(--muted);stroke-width:1.2;fill:none}
+.dg .dashed{stroke:var(--muted);stroke-width:1.1;fill:none;stroke-dasharray:5 4}
+.dg .accent-line{stroke:var(--accent);stroke-width:1.6;fill:none}
+.dg .band{fill:var(--surface-2);stroke:none}
+.dg .freq{fill:var(--accent);opacity:.85}
+@media (max-width:640px){
+  body{font-size:15px}
+  .page{padding-block:36px 72px}
+  figure{padding:12px 10px 0}
+}
+</style>
+
+<div class="page">
+<header>
+  <div class="eyebrow">Architecture dossier · rig 0.46</div>
+  <h1>Rig 设计拆解</h1>
+  <p class="deck">这套代码的所有分层都服从同一条规则：按变化速率切开，依赖只指向稳定的一端。看懂这条规则，你就能判断每一处改动该落在哪一层；看不懂，就只能照着文件目录猜。</p>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#axis">1 一条主轴</a>
+  <a href="#contracts">2 五个契约</a>
+  <a href="#seam">3 类型与数据的接缝</a>
+  <a href="#effect">4 副作用单一通道</a>
+  <a href="#runtimes">5 两套运行时</a>
+  <a href="#stages">6 七阶段</a>
+  <a href="#kernel">7 内核、宿主、插件</a>
+  <a href="#proof">8 契约的证明</a>
+  <a href="#cost">9 代价清单</a>
+  <a href="#rules">10 改造判断规则</a>
+</nav>
+
+<section id="axis">
+  <h2>1 一条主轴：变化速率</h2>
+  <p>按领域分层会得到「provider 层、agent 层、存储层」。Rig 不这样分。它先问一件事：<strong>这层东西多久变一次</strong>。变得快的，做成数据；变得慢的，做成类型；几乎不变的是基础设施。依赖方向永远从易变指向稳定。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 512" role="img" aria-label="六层按变化速率从快到慢排列，依赖只向下指向稳定端">
+      <defs>
+        <marker id="d-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <text x="20" y="40" class="t-sm">层</text>
+      <text x="696" y="40" class="t-sm">表达形式</text>
+      <text x="806" y="40" class="t-sm">变化频率</text>
+
+      <g>
+        <rect class="data" x="20" y="60" width="640" height="54" rx="8"/>
+        <text x="38" y="84" class="t-mono">catalog · 模型事实</text>
+        <text x="38" y="103" class="t-sm">上下文窗口、价格、模态、推理能力，三层覆盖</text>
+        <rect class="data" x="694" y="75" width="84" height="24" rx="12"/>
+        <text x="736" y="91" class="t-sm" text-anchor="middle">数据</text>
+        <rect class="freq" x="806" y="80" width="60" height="12" rx="6"/>
+        <text x="898" y="91" class="t-xs" text-anchor="end">快</text>
+      </g>
+
+      <line class="line" x1="340" y1="114" x2="340" y2="126" marker-end="url(#d-arrow)"/>
+
+      <g>
+        <rect class="data" x="20" y="130" width="640" height="54" rx="8"/>
+        <text x="38" y="154" class="t-mono">wire · 厂商协议</text>
+        <text x="38" y="173" class="t-sm">纯数据加纯函数：编码请求，解码回复</text>
+        <rect class="data" x="694" y="145" width="84" height="24" rx="12"/>
+        <text x="736" y="161" class="t-sm" text-anchor="middle">数据</text>
+        <rect class="freq" x="806" y="150" width="60" height="12" rx="6"/>
+        <text x="898" y="161" class="t-xs" text-anchor="end">快</text>
+      </g>
+
+      <line class="line" x1="340" y1="184" x2="340" y2="196" marker-end="url(#d-arrow)"/>
+
+      <g>
+        <rect class="type" x="20" y="200" width="640" height="54" rx="8"/>
+        <text x="38" y="224" class="t-mono">operation · 操作契约</text>
+        <text x="38" y="243" class="t-sm">Request / Event / End / Response / Fold</text>
+        <rect class="type" x="694" y="215" width="84" height="24" rx="12"/>
+        <text x="736" y="231" class="t-sm" text-anchor="middle">类型</text>
+        <rect class="freq" x="806" y="220" width="40" height="12" rx="6"/>
+        <text x="898" y="231" class="t-xs" text-anchor="end">中</text>
+      </g>
+
+      <line class="line" x1="340" y1="254" x2="340" y2="266" marker-end="url(#d-arrow)"/>
+
+      <g>
+        <rect class="type" x="20" y="270" width="640" height="54" rx="8"/>
+        <text x="38" y="294" class="t-mono">driver · 调用驱动</text>
+        <text x="38" y="313" class="t-sm">Model = Wire + Transport，call 就是 stream 折叠到结束</text>
+        <rect class="type" x="694" y="285" width="84" height="24" rx="12"/>
+        <text x="736" y="301" class="t-sm" text-anchor="middle">组合</text>
+        <rect class="freq" x="806" y="290" width="26" height="12" rx="6"/>
+        <text x="898" y="301" class="t-xs" text-anchor="end">慢</text>
+      </g>
+
+      <line class="line" x1="340" y1="324" x2="340" y2="336" marker-end="url(#d-arrow)"/>
+
+      <g>
+        <rect class="type" x="20" y="340" width="640" height="54" rx="8"/>
+        <text x="38" y="364" class="t-mono">transport · 传输</text>
+        <text x="38" y="383" class="t-sm">唯一接触网络的一层，一个方法：send</text>
+        <rect class="type" x="694" y="355" width="84" height="24" rx="12"/>
+        <text x="736" y="371" class="t-sm" text-anchor="middle">trait</text>
+        <rect class="freq" x="806" y="360" width="26" height="12" rx="6"/>
+        <text x="898" y="371" class="t-xs" text-anchor="end">慢</text>
+      </g>
+
+      <line class="line" x1="340" y1="394" x2="340" y2="406" marker-end="url(#d-arrow)"/>
+
+      <g>
+        <rect class="neutral" x="20" y="410" width="640" height="54" rx="8"/>
+        <text x="38" y="434" class="t-mono">effect / serve · 记录与调度</text>
+        <text x="38" y="453" class="t-sm">副作用的单一通道，以及 handler 的擦除边界</text>
+        <rect class="neutral" x="694" y="425" width="84" height="24" rx="12"/>
+        <text x="736" y="441" class="t-sm" text-anchor="middle">基础设施</text>
+        <rect class="freq" x="806" y="430" width="16" height="12" rx="6"/>
+        <text x="898" y="441" class="t-xs" text-anchor="end">最慢</text>
+      </g>
+
+      <text x="20" y="500" class="t-sm">依赖只向下：上层可以依赖下层，下层不知道上层存在。</text>
+    </svg>
+    <figcaption>同一个竖列从「每周都在变」排到「几乎不变」。越往上越适合做成数据，越往下越适合做成类型或 trait。改任何东西之前，先在这条轴上找到它的位置。</figcaption>
+  </figure>
+
+  <div class="note">
+    <p>最能说明问题的是 <code>Wire</code>：它明明是厂商适配器，却要求 <code>Clone + Send + Sync + Serialize + Deserialize</code>，<code>encode</code> 必须是纯函数。因为厂商协议变得快，所以它不能是一个持有连接的对象，必须是一份能存进场景、写进配置、录进回放的数据。</p>
+  </div>
+</section>
+
+<section id="contracts">
+  <h2>2 五个契约与一次调用</h2>
+  <p>一次模型调用被拆成五个角色，每个角色只回答一个问题：</p>
+  <ul>
+    <li><code>Operation</code>：这次交换的输入、事件、结束、输出分别是什么。</li>
+    <li><code>Wire</code>：这个厂商的请求长什么样，回复怎么读。</li>
+    <li><code>Transport</code>：字节怎么送出去、怎么收回来。</li>
+    <li><code>Driver</code>：把上面三者绑在一起，保证流式和整包走同一条路径。</li>
+    <li><code>Effect / Serve</code>：这次交换怎么被记录、怎么被擦除后调度。</li>
+  </ul>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 430" role="img" aria-label="一次调用的七个步骤，只有 Transport 一步接触 IO，其余都是纯数据与纯函数">
+      <defs>
+        <marker id="c-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+        <marker id="c-arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="plain" x="20" y="108" width="100" height="60" rx="8"/>
+        <text x="70" y="134" class="t-sm" text-anchor="middle">Request</text>
+        <text x="70" y="152" class="t-xs" text-anchor="middle">请求</text>
+      </g>
+      <line class="line" x1="120" y1="138" x2="134" y2="138" marker-end="url(#c-arrow)"/>
+      <g>
+        <rect class="type" x="138" y="108" width="100" height="60" rx="8"/>
+        <text x="188" y="134" class="t-mono-sm" text-anchor="middle">prepare</text>
+        <text x="188" y="152" class="t-xs" text-anchor="middle">整形 / 拒绝</text>
+      </g>
+      <line class="line" x1="238" y1="138" x2="252" y2="138" marker-end="url(#c-arrow)"/>
+      <g>
+        <rect class="type" x="256" y="108" width="100" height="60" rx="8"/>
+        <text x="306" y="134" class="t-mono-sm" text-anchor="middle">encode</text>
+        <text x="306" y="152" class="t-xs" text-anchor="middle">编码</text>
+      </g>
+      <line class="line" x1="356" y1="138" x2="370" y2="138" marker-end="url(#c-arrow)"/>
+      <g>
+        <rect class="data" x="374" y="108" width="100" height="60" rx="8"/>
+        <text x="424" y="134" class="t-mono-sm" text-anchor="middle">Transport</text>
+        <text x="424" y="152" class="t-xs" text-anchor="middle">发送</text>
+      </g>
+      <line class="line" x1="474" y1="138" x2="488" y2="138" marker-end="url(#c-arrow)"/>
+      <g>
+        <rect class="type" x="492" y="108" width="100" height="60" rx="8"/>
+        <text x="542" y="134" class="t-mono-sm" text-anchor="middle">Decoder</text>
+        <text x="542" y="152" class="t-xs" text-anchor="middle">解码</text>
+      </g>
+      <line class="line" x1="592" y1="138" x2="606" y2="138" marker-end="url(#c-arrow)"/>
+      <g>
+        <rect class="type" x="610" y="108" width="100" height="60" rx="8"/>
+        <text x="660" y="134" class="t-mono-sm" text-anchor="middle">Fold</text>
+        <text x="660" y="152" class="t-xs" text-anchor="middle">折叠</text>
+      </g>
+      <line class="line" x1="710" y1="138" x2="724" y2="138" marker-end="url(#c-arrow)"/>
+      <g>
+        <rect class="plain" x="728" y="108" width="100" height="60" rx="8"/>
+        <text x="778" y="134" class="t-sm" text-anchor="middle">Response</text>
+        <text x="778" y="152" class="t-xs" text-anchor="middle">响应</text>
+      </g>
+
+      <line class="dashed" x1="20" y1="84" x2="356" y2="84"/>
+      <text x="188" y="76" class="t-xs" text-anchor="middle">无 IO · 可纯函数测试</text>
+      <line class="dashed" x1="492" y1="84" x2="828" y2="84"/>
+      <text x="660" y="76" class="t-xs" text-anchor="middle">无 IO · 流式与整包同一条路径</text>
+      <text x="424" y="76" class="t-xs" text-anchor="middle" style="fill:var(--accent)">唯一的 IO 点</text>
+
+      <text x="481" y="192" class="t-xs" text-anchor="middle">帧：SSE / NDJSON / 整包</text>
+
+      <rect class="neutral" x="20" y="252" width="808" height="58" rx="8"/>
+      <text x="40" y="277" class="t-mono-sm">Effect 记录</text>
+      <text x="40" y="296" class="t-sm">请求、结果、耗时、错误码都是可序列化的数据，同一条路径既跑实时调用也跑回放</text>
+      <line class="dashed" x1="70" y1="168" x2="70" y2="252" marker-end="url(#c-arrow)"/>
+      <line class="dashed" x1="424" y1="168" x2="424" y2="252" marker-end="url(#c-arrow)"/>
+      <line class="dashed" x1="778" y1="168" x2="778" y2="252" marker-end="url(#c-arrow)"/>
+
+      <path class="accent-line" d="M30 340 L30 368 L70 368 L70 338" marker-end="url(#c-arrow-a)"/>
+      <text x="44" y="392" class="t-xs">回放：同一份记录重新走完这条路径</text>
+    </svg>
+    <figcaption>七个步骤里只有 <code>Transport</code> 一步接触真实 IO。因此「录制回放」不是加一个旁路，而是把同一个 <code>Transport</code> 换成读记录的实现；「流式」也不是第二条代码路径，而是同一个 <code>Decoder</code> 加 <code>Fold</code> 逐事件推进。</figcaption>
+  </figure>
+
+  <p>关键的一刀是 <strong><code>Decoder</code> 和 <code>Fold</code> 分开</strong>。Decoder 只懂「字节 → 厂商事件」，Fold 只懂「事件加结束 → 归一化响应」。两者拆开之后，流式和整包共享同一套解码与折叠逻辑，录下来的事件流也能直接重放出完整响应。</p>
+</section>
+
+<section id="seam">
+  <h2>3 类型在上，数据在下</h2>
+  <p>同一个代码库里并存两种表达，而且它们只在一处相接：构造期用类型保证正确，运行期用数据保证可存、可回放、可跨进程。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 350" role="img" aria-label="编译期类型与运行期数据之间有三个擦除接缝">
+      <defs>
+        <marker id="s-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+        <marker id="s-arrow-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--stable)"/>
+        </marker>
+      </defs>
+
+      <rect class="band" x="20" y="20" width="860" height="100" rx="10"/>
+      <text x="38" y="44" class="t-xs">编译期 · 构造与校验</text>
+      <g>
+        <rect class="type" x="38" y="56" width="250" height="50" rx="8"/>
+        <text x="163" y="78" class="t-mono" text-anchor="middle">Model&lt;W: Wire&lt;Op = Completion&gt;&gt;</text>
+        <text x="163" y="95" class="t-xs" text-anchor="middle">配错 operation 编译不过</text>
+      </g>
+      <g>
+        <rect class="type" x="325" y="56" width="250" height="50" rx="8"/>
+        <text x="450" y="78" class="t-mono" text-anchor="middle">AgentBuilder + AgentHook</text>
+        <text x="450" y="95" class="t-xs" text-anchor="middle">钩子类型在编译期确定</text>
+      </g>
+      <g>
+        <rect class="type" x="612" y="56" width="250" height="50" rx="8"/>
+        <text x="737" y="78" class="t-mono" text-anchor="middle">impl Operation for X</text>
+        <text x="737" y="95" class="t-xs" text-anchor="middle">能力本身是一个类型</text>
+      </g>
+
+      <rect class="band" x="20" y="240" width="860" height="100" rx="10"/>
+      <text x="38" y="264" class="t-xs">运行期 · 存储、录制与回放</text>
+      <g>
+        <rect class="data" x="38" y="276" width="250" height="50" rx="8"/>
+        <text x="163" y="298" class="t-mono" text-anchor="middle">EffectRow + EffectKind</text>
+        <text x="163" y="315" class="t-xs" text-anchor="middle">请求与结果都是 serde 数据</text>
+      </g>
+      <g>
+        <rect class="data" x="325" y="276" width="250" height="50" rx="8"/>
+        <text x="450" y="298" class="t-mono" text-anchor="middle">session log / JSONL</text>
+        <text x="450" y="315" class="t-xs" text-anchor="middle">会话可以落盘、恢复、分叉</text>
+      </g>
+      <g>
+        <rect class="data" x="612" y="276" width="250" height="50" rx="8"/>
+        <text x="737" y="298" class="t-mono" text-anchor="middle">cassette / YAML</text>
+        <text x="737" y="315" class="t-xs" text-anchor="middle">录制的回复可以重放</text>
+      </g>
+
+      <line class="line" x1="163" y1="120" x2="163" y2="178" marker-end="url(#s-arrow)"/>
+      <line class="dashed" x1="173" y1="178" x2="173" y2="120" marker-end="url(#s-arrow)"/>
+      <rect class="plain" x="98" y="138" width="130" height="24" rx="12"/>
+      <text x="163" y="154" class="t-mono-sm" text-anchor="middle">DynModel&lt;Op&gt;</text>
+
+      <line class="line" x1="450" y1="120" x2="450" y2="178" marker-end="url(#s-arrow)"/>
+      <line class="dashed" x1="460" y1="178" x2="460" y2="120" marker-end="url(#s-arrow)"/>
+      <rect class="plain" x="385" y="138" width="130" height="24" rx="12"/>
+      <text x="450" y="154" class="t-mono-sm" text-anchor="middle">ErasedHandler</text>
+
+      <line class="line" x1="737" y1="120" x2="737" y2="178" marker-end="url(#s-arrow)"/>
+      <line class="dashed" x1="747" y1="178" x2="747" y2="120" marker-end="url(#s-arrow)"/>
+      <rect class="plain" x="672" y="138" width="130" height="24" rx="12"/>
+      <text x="737" y="154" class="t-mono-sm" text-anchor="middle">CustomEffect</text>
+
+      <text x="163" y="206" class="t-xs" text-anchor="middle">擦除 ↓ / 重建 ↑</text>
+      <text x="450" y="206" class="t-xs" text-anchor="middle">擦除 ↓ / 重建 ↑</text>
+      <text x="737" y="206" class="t-xs" text-anchor="middle">擦除 ↓ / 重建 ↑</text>
+    </svg>
+    <figcaption>边界之上靠编译器保证「这个 wire 配这个 operation 是对的」；边界之下靠 serde 保证「这一步可以被存下来、送出去、重放出来」。三个接缝就是全部交叉点。</figcaption>
+  </figure>
+
+  <div class="note stable">
+    <p>这条思路可以直接用在你自己的框架里：凡是需要跨进程、跨会话、可回放的东西，都不要让它以泛型类型的形式穿过边界。给它一个擦除后的数据形态，再提供一个重建入口。</p>
+  </div>
+</section>
+
+<section id="effect">
+  <h2>4 副作用只有一条通道</h2>
+  <p>模型调用、工具调用、消息投递，在 Rig 里是同一类东西：<code>effect</code>。所有横切关注点都挂在这一个点上，而不是散落在每个调用处。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 380" role="img" aria-label="三类副作用汇入同一个 EffectRow，再分发给五类消费者">
+      <defs>
+        <marker id="e-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+        <marker id="e-arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="plain" x="18" y="56" width="190" height="54" rx="8"/>
+        <text x="113" y="80" class="t-sm" text-anchor="middle">模型调用</text>
+        <text x="113" y="98" class="t-mono-sm" text-anchor="middle">model:primary</text>
+      </g>
+      <g>
+        <rect class="plain" x="18" y="128" width="190" height="54" rx="8"/>
+        <text x="113" y="152" class="t-sm" text-anchor="middle">工具调用</text>
+        <text x="113" y="170" class="t-mono-sm" text-anchor="middle">tool:read</text>
+      </g>
+      <g>
+        <rect class="plain" x="18" y="200" width="190" height="54" rx="8"/>
+        <text x="113" y="224" class="t-sm" text-anchor="middle">消息投递</text>
+        <text x="113" y="242" class="t-mono-sm" text-anchor="middle">incoming</text>
+      </g>
+
+      <rect class="data" x="326" y="56" width="250" height="198" rx="10"/>
+      <text x="451" y="86" class="t-mono" text-anchor="middle">EffectRow</text>
+      <text x="451" y="116" class="t-mono-sm" text-anchor="middle">HandlerKey</text>
+      <text x="451" y="140" class="t-mono-sm" text-anchor="middle">EffectKind</text>
+      <text x="451" y="164" class="t-mono-sm" text-anchor="middle">request / answer</text>
+      <text x="451" y="188" class="t-mono-sm" text-anchor="middle">EffectId</text>
+      <text x="451" y="212" class="t-mono-sm" text-anchor="middle">serde</text>
+      <text x="451" y="238" class="t-xs" text-anchor="middle">一次交换的全部信息</text>
+
+      <line class="line" x1="208" y1="83" x2="318" y2="100" marker-end="url(#e-arrow)"/>
+      <line class="line" x1="208" y1="155" x2="318" y2="155" marker-end="url(#e-arrow)"/>
+      <line class="line" x1="208" y1="227" x2="318" y2="210" marker-end="url(#e-arrow)"/>
+      <text x="263" y="140" class="t-xs" text-anchor="middle">都走这里</text>
+
+      <g>
+        <rect class="type" x="684" y="42" width="198" height="38" rx="8"/>
+        <text x="783" y="66" class="t-sm" text-anchor="middle">审批 Gate</text>
+      </g>
+      <g>
+        <rect class="neutral" x="684" y="92" width="198" height="38" rx="8"/>
+        <text x="783" y="116" class="t-sm" text-anchor="middle">预算</text>
+      </g>
+      <g>
+        <rect class="neutral" x="684" y="142" width="198" height="38" rx="8"/>
+        <text x="783" y="166" class="t-sm" text-anchor="middle">会话日志</text>
+      </g>
+      <g>
+        <rect class="neutral" x="684" y="192" width="198" height="38" rx="8"/>
+        <text x="783" y="216" class="t-sm" text-anchor="middle">遥测</text>
+      </g>
+      <g>
+        <rect class="data" x="684" y="242" width="198" height="38" rx="8"/>
+        <text x="783" y="266" class="t-sm" text-anchor="middle">录制回放</text>
+      </g>
+
+      <line class="line" x1="576" y1="120" x2="676" y2="66" marker-end="url(#e-arrow)"/>
+      <line class="line" x1="576" y1="130" x2="676" y2="112" marker-end="url(#e-arrow)"/>
+      <line class="line" x1="576" y1="150" x2="676" y2="158" marker-end="url(#e-arrow)"/>
+      <line class="line" x1="576" y1="175" x2="676" y2="206" marker-end="url(#e-arrow)"/>
+      <line class="line" x1="576" y1="195" x2="676" y2="256" marker-end="url(#e-arrow)"/>
+      <text x="626" y="118" class="t-xs" text-anchor="middle">只挂一处</text>
+
+      <text x="18" y="330" class="t-sm">新增一个横切关注点 = 新增一个消费者，调用点不改。</text>
+    </svg>
+    <figcaption>审批、预算、日志、遥测、回放这五件事如果各写各的，就得到处补调用点。Rig 把它们全部收敛成一个消费者接口，副作用只有一条入口和一条出口。你改造时如果要做审计或回放，这一层不要绕开。</figcaption>
+  </figure>
+</section>
+
+<section id="runtimes">
+  <h2>5 两套运行时，各自回答一个问题</h2>
+  <p>很多人以为 <code>rig-agent</code> 和 <code>rig-ecs</code> 是新旧替代关系。不是。它们回答的是不同的问题：调用方是否需要在执行过程中介入。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 448" role="img" aria-label="对比 sans-I/O 状态机与 ECS 帧循环，前者调用方拥有循环，后者内核拥有循环">
+      <defs>
+        <marker id="r-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <rect class="plain" x="16" y="20" width="428" height="380" rx="10"/>
+      <text x="38" y="50" class="t-mono">rig-agent · sans-I/O</text>
+      <text x="420" y="50" class="t-xs" text-anchor="end">你拥有循环</text>
+
+      <g>
+        <rect class="type" x="60" y="78" width="340" height="48" rx="8"/>
+        <text x="230" y="107" class="t-mono-sm" text-anchor="middle">AgentRun::next_step()</text>
+      </g>
+      <line class="line" x1="230" y1="126" x2="230" y2="146" marker-end="url(#r-arrow)"/>
+      <g>
+        <rect class="plain" x="60" y="150" width="340" height="48" rx="8"/>
+        <text x="230" y="179" class="t-sm" text-anchor="middle">它告诉你：该调模型 / 该跑工具</text>
+      </g>
+      <line class="line" x1="230" y1="198" x2="230" y2="218" marker-end="url(#r-arrow)"/>
+      <g>
+        <rect class="data" x="60" y="222" width="340" height="48" rx="8"/>
+        <text x="230" y="251" class="t-sm" text-anchor="middle">你的执行器完成 IO，自己决定策略</text>
+      </g>
+      <line class="line" x1="230" y1="270" x2="230" y2="290" marker-end="url(#r-arrow)"/>
+      <g>
+        <rect class="type" x="60" y="294" width="340" height="48" rx="8"/>
+        <text x="230" y="323" class="t-mono-sm" text-anchor="middle">run.answer(..) → 下一步</text>
+      </g>
+      <path class="dashed" d="M60 318 L36 318 L36 102 L52 102" marker-end="url(#r-arrow)"/>
+      <text x="50" y="216" class="t-xs" transform="rotate(-90 50 216)">直到 Done</text>
+
+      <rect class="plain" x="456" y="20" width="428" height="380" rx="10"/>
+      <text x="478" y="50" class="t-mono">rig-ecs · 帧循环</text>
+      <text x="860" y="50" class="t-xs" text-anchor="end">内核拥有循环</text>
+
+      <g>
+        <rect class="plain" x="500" y="78" width="340" height="48" rx="8"/>
+        <text x="670" y="107" class="t-sm" text-anchor="middle">Bevy Update</text>
+      </g>
+      <line class="line" x1="670" y1="126" x2="670" y2="146" marker-end="url(#r-arrow)"/>
+      <g>
+        <rect class="type" x="500" y="150" width="340" height="48" rx="8"/>
+        <text x="670" y="179" class="t-mono-sm" text-anchor="middle">AgentPass · 七个阶段</text>
+      </g>
+      <line class="line" x1="670" y1="198" x2="670" y2="218" marker-end="url(#r-arrow)"/>
+      <g>
+        <rect class="data" x="500" y="222" width="340" height="48" rx="8"/>
+        <text x="670" y="251" class="t-sm" text-anchor="middle">effect 落定，插件系统在里面介入</text>
+      </g>
+      <line class="line" x1="670" y1="270" x2="670" y2="290" marker-end="url(#r-arrow)"/>
+      <g>
+        <rect class="plain" x="500" y="294" width="340" height="48" rx="8"/>
+        <text x="670" y="323" class="t-sm" text-anchor="middle">没有移动 → 结束本帧</text>
+      </g>
+      <path class="dashed" d="M500 318 L476 318 L476 102 L492 102" marker-end="url(#r-arrow)"/>
+      <text x="490" y="216" class="t-xs" transform="rotate(-90 490 216)">每帧重复</text>
+
+      <text x="16" y="430" class="t-sm">状态：可序列化的 AgentRun / ECS 组件　　介入：AgentHook / Stage 系统</text>
+    </svg>
+    <figcaption>左边适合「跑完给结果」：库、批处理、嵌入式。右边适合「每一步都要能看、能拦、能改」：交互式 agent、多 agent 并存、需要中途恢复。判断标准不是先进与否，是你的产品需不需要在运行中介入。</figcaption>
+  </figure>
+
+  <div class="note">
+    <p><code>AgentRun</code> 最容易被低估的一点：它在工具调用挂起时<strong>整个状态可序列化</strong>。存下来，换一个进程恢复，待执行的工具调用会从自己的状态里重新发出。需要人工审批的流程可以直接建立在这个性质上。</p>
+  </div>
+</section>
+
+<section id="stages">
+  <h2>6 七阶段：同一帧内跑到不动点</h2>
+  <p>在 ECS 里，每一次「工作」都是一个 effect 实体。它在一帧之内依次经过七个阶段，任何一个阶段都可能被插件拦下、改写或挂起。跑完一轮如果还有东西在动，就再跑一轮，直到没有 effect 移动为止。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 340" role="img" aria-label="七个阶段依次推进，结束后回到 Arrive 直到固定点">
+      <defs>
+        <marker id="g-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <text x="84" y="52" class="t-xs" text-anchor="middle">effect 进入</text>
+      <text x="206" y="52" class="t-xs" text-anchor="middle" style="fill:var(--stable)">插件可改结果</text>
+      <text x="700" y="52" class="t-xs" text-anchor="middle" style="fill:var(--accent)">插件可做决策</text>
+
+      <g>
+        <rect class="plain" x="30" y="70" width="108" height="58" rx="8"/>
+        <text x="84" y="96" class="t-mono-sm" text-anchor="middle">Arrive</text>
+        <text x="84" y="114" class="t-xs" text-anchor="middle">抵达</text>
+      </g>
+      <line class="line" x1="138" y1="99" x2="150" y2="99" marker-end="url(#g-arrow)"/>
+      <g>
+        <rect class="type" x="152" y="70" width="108" height="58" rx="8"/>
+        <text x="206" y="96" class="t-mono-sm" text-anchor="middle">Review</text>
+        <text x="206" y="114" class="t-xs" text-anchor="middle">审阅</text>
+      </g>
+      <line class="line" x1="260" y1="99" x2="272" y2="99" marker-end="url(#g-arrow)"/>
+      <g>
+        <rect class="plain" x="274" y="70" width="108" height="58" rx="8"/>
+        <text x="328" y="96" class="t-mono-sm" text-anchor="middle">Commit</text>
+        <text x="328" y="114" class="t-xs" text-anchor="middle">提交</text>
+      </g>
+      <line class="line" x1="382" y1="99" x2="394" y2="99" marker-end="url(#g-arrow)"/>
+      <g>
+        <rect class="plain" x="396" y="70" width="108" height="58" rx="8"/>
+        <text x="450" y="96" class="t-mono-sm" text-anchor="middle">Admit</text>
+        <text x="450" y="114" class="t-xs" text-anchor="middle">准入</text>
+      </g>
+      <line class="line" x1="504" y1="99" x2="516" y2="99" marker-end="url(#g-arrow)"/>
+      <g>
+        <rect class="plain" x="518" y="70" width="108" height="58" rx="8"/>
+        <text x="572" y="96" class="t-mono-sm" text-anchor="middle">Prepare</text>
+        <text x="572" y="114" class="t-xs" text-anchor="middle">准备</text>
+      </g>
+      <line class="line" x1="626" y1="99" x2="638" y2="99" marker-end="url(#g-arrow)"/>
+      <g>
+        <rect class="data" x="640" y="70" width="108" height="58" rx="8"/>
+        <text x="694" y="96" class="t-mono-sm" text-anchor="middle">Gate</text>
+        <text x="694" y="114" class="t-xs" text-anchor="middle">放行 / 拒绝</text>
+      </g>
+      <line class="line" x1="748" y1="99" x2="760" y2="99" marker-end="url(#g-arrow)"/>
+      <g>
+        <rect class="plain" x="762" y="70" width="108" height="58" rx="8"/>
+        <text x="816" y="96" class="t-mono-sm" text-anchor="middle">Start</text>
+        <text x="816" y="114" class="t-xs" text-anchor="middle">开始</text>
+      </g>
+
+      <path class="dashed" d="M816 128 L816 240 L84 240 L84 136" marker-end="url(#g-arrow)"/>
+      <text x="450" y="232" class="t-xs" text-anchor="middle">同一帧内重复，直到没有 effect 移动</text>
+      <text x="450" y="270" class="t-sm" text-anchor="middle">然后进入下一帧</text>
+    </svg>
+    <figcaption>阶段顺序是固定的，插件的介入方式却是普通的 Bevy system：在 Gate 里写 Decision，在 Review 里改 Outcome，用 HoldOf 把 effect 挂起。固定的顺序加普通的系统，换来的是可预测的时序和不需要中心注册表的组合方式。</figcaption>
+  </figure>
+
+  <p>这不是回调链。回调链的问题是「谁在什么时候被调用」只能靠读框架源码回答；阶段模型的答案是「你把自己的系统加进哪个阶段」。代价是顺序敏感，所以仓库里有一个 <code>check-stage-order</code> 专门守这件事。</p>
+</section>
+
+<section id="kernel">
+  <h2>7 内核、宿主、插件：三层边界</h2>
+  <p>这是整个仓库最值得直接搬走的一个决定：<strong>内核不知道视图，也不知道文件系统</strong>。它只定义 agent、effect、阶段、会话日志；存储和模型由宿主注入。因此同一个内核可以跑 TUI、<code>-p</code>、ACP 和纯 library 程序。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 372" role="img" aria-label="插件层、宿主层、内核层三层，插件只通过公共 API，宿主向内核注入资源">
+      <defs>
+        <marker id="k-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect class="type" x="20" y="34" width="640" height="72" rx="8"/>
+        <text x="40" y="62" class="t-mono">plugins/* · 8 个插件 crate</text>
+        <text x="40" y="84" class="t-sm">TUI、默认命令、编码工具、ACP、MCP、Steel、inspect、traffic</text>
+      </g>
+      <g>
+        <rect class="neutral" x="20" y="136" width="640" height="72" rx="8"/>
+        <text x="40" y="164" class="t-mono">rig-harness · 宿主</text>
+        <text x="40" y="186" class="t-sm">会话、设置、工作区、子进程、文件监听、提问与选择器</text>
+      </g>
+      <g>
+        <rect class="data" x="20" y="238" width="640" height="72" rx="8"/>
+        <text x="40" y="266" class="t-mono">rig-ecs · 内核</text>
+        <text x="40" y="288" class="t-sm">agent / turn / call 实体，effect 通道，阶段，会话日志与恢复</text>
+      </g>
+
+      <line class="line" x1="300" y1="106" x2="300" y2="130" marker-end="url(#k-arrow)"/>
+      <text x="312" y="122" class="t-mono-sm">只用公共 API</text>
+      <line class="line" x1="300" y1="208" x2="300" y2="232" marker-end="url(#k-arrow)"/>
+      <text x="312" y="224" class="t-mono-sm">注入 Store / Models</text>
+
+      <text x="692" y="62" class="t-xs">编译期边界</text>
+      <text x="692" y="80" class="t-xs">关掉即不编入</text>
+      <text x="692" y="164" class="t-xs">产品假设</text>
+      <text x="692" y="182" class="t-xs">终端 agent 的形状</text>
+      <text x="692" y="266" class="t-xs">可复用内核</text>
+      <text x="692" y="284" class="t-xs">不碰视图与磁盘</text>
+
+      <text x="20" y="348" class="t-sm">同一内核跑 TUI、-p、ACP 和 library 程序；换一个前端不需要动内核。</text>
+    </svg>
+    <figcaption>如果你只抄一个决定，抄这个。内核里出现任何「终端」「文件」「屏幕」字样，复用它就不再可能；反过来，把存储和模型做成注入点，你的产品形态可以随时换。</figcaption>
+  </figure>
+</section>
+
+<section id="proof">
+  <h2>8 契约靠消费者证明</h2>
+  <p>文档会过期，注释会撒谎。Rig 的办法是让公共 API 一直有外部消费者，并且让 CI 编译它们。</p>
+
+  <figure>
+    <svg class="dg" viewBox="0 0 900 250" role="img" aria-label="三类消费者共同证明公共 API 的稳定性">
+      <defs>
+        <marker id="p-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+
+      <rect class="type" x="350" y="26" width="200" height="52" rx="8"/>
+      <text x="450" y="57" class="t-sm" text-anchor="middle">公共 API</text>
+
+      <g>
+        <rect class="plain" x="40" y="156" width="240" height="60" rx="8"/>
+        <text x="160" y="182" class="t-mono-sm" text-anchor="middle">frozen_api · 8 个程序</text>
+        <text x="160" y="200" class="t-xs" text-anchor="middle">钉住每个扩展点的形状</text>
+      </g>
+      <g>
+        <rect class="plain" x="330" y="156" width="240" height="60" rx="8"/>
+        <text x="450" y="182" class="t-mono-sm" text-anchor="middle">corpus · 17 个包</text>
+        <text x="450" y="200" class="t-xs" text-anchor="middle">只用公开 API 写完整插件</text>
+      </g>
+      <g>
+        <rect class="plain" x="620" y="156" width="240" height="60" rx="8"/>
+        <text x="740" y="182" class="t-mono-sm" text-anchor="middle">cassette · 867 份夹具</text>
+        <text x="740" y="200" class="t-xs" text-anchor="middle">回放真实流量比对结果</text>
+      </g>
+
+      <line class="line" x1="160" y1="156" x2="380" y2="84" marker-end="url(#p-arrow)"/>
+      <line class="line" x1="450" y1="156" x2="450" y2="84" marker-end="url(#p-arrow)"/>
+      <line class="line" x1="740" y1="156" x2="520" y2="84" marker-end="url(#p-arrow)"/>
+
+      <text x="232" y="126" class="t-xs" text-anchor="middle">编译</text>
+      <text x="450" y="112" class="t-xs" text-anchor="middle">构建 + 测试</text>
+      <text x="668" y="126" class="t-xs" text-anchor="middle">回放比对</text>
+    </svg>
+    <figcaption>你 fork 之后最该保留的就是这一层。它不产生功能，但它决定你半年后还敢不敢动内核。</figcaption>
+  </figure>
+</section>
+
+<section id="cost">
+  <h2>9 每条拆分付的代价</h2>
+  <p>这套架构不是免费的。改造之前先确认你愿意付哪些账。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>决定</th><th>换来了什么</th><th>代价</th></tr></thead>
+      <tbody>
+        <tr><td><code>Operation</code> 作为泛型参数</td><td>配错 wire 与 operation 编译不过</td><td>单态化、签名长、入门曲线陡</td></tr>
+        <tr><td><code>Wire</code> 是纯数据</td><td>可存、可录、可换传输、可无网测试</td><td>解码器要写成状态机，不能持有连接</td></tr>
+        <tr><td><code>Decoder</code> / <code>Fold</code> 分开</td><td>流式与整包一条路径，录制可重放</td><td>多一层抽象，读代码要跟着两层走</td></tr>
+        <tr><td>副作用单一通道</td><td>横切关注点只挂一处</td><td>一切副作用都必须可序列化</td></tr>
+        <tr><td>ECS 阶段模型</td><td>时序可预测，插件普通 system 就能组合</td><td>顺序敏感，需要 <code>check-stage-order</code> 守</td></tr>
+        <tr><td>插件是编译单元</td><td>关掉是真的关掉，编译器守住边界</td><td>构建慢，启动器与插件要版本对齐</td></tr>
+        <tr><td>corpus / frozen_api</td><td>公共 API 不敢随便破坏</td><td>每次改 API 都要同步一大片消费者</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="rules">
+  <h2>10 改造时可以直接用的判断规则</h2>
+  <p>你以后每加一个东西，先问这五个问题，答案会直接告诉你它该落在哪一层。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>问题</th><th>落在哪</th></tr></thead>
+      <tbody>
+        <tr><td>这个变化每周都可能发生吗？</td><td>数据。像 catalog 一样做成可覆盖的表，不要写进代码。</td></tr>
+        <tr><td>它需要一个厂商或后端的专门实现吗？</td><td>纯数据加纯函数。像 <code>Wire</code> 一样：能序列化，<code>encode</code> 无副作用。</td></tr>
+        <tr><td>它是框架的能力契约吗（输入、事件、输出）？</td><td>类型。像 <code>Operation</code> 一样，让编译器帮你校验组合。</td></tr>
+        <tr><td>它只影响一个前端或一种产品形态吗？</td><td>插件。不要进内核；用公共 API 写，编译器会告诉你越界没有。</td></tr>
+        <tr><td>它要跨进程、跨会话、可回放吗？</td><td>擦除成数据，再提供重建入口。不要让泛型类型穿过这个边界。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note stable">
+    <p>一句话版本：<strong>变化快的做成数据，变化慢的做成类型，只影响前端的做成插件，要跨进程的擦除成数据。</strong></p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="cut">
+  <h2>11 你的切割线</h2>
+  <p>下一步是「把哪一层作为你的基础框架」。四层不是四选一的套餐，而是一条可以停在任何一层的阶梯。详细用法见配套的《Rig 使用逻辑》。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>停在这层</th><th>你拿到</th><th>你必须接受</th></tr></thead>
+      <tbody>
+        <tr><td><code>rig-core</code></td><td>27 个 provider、12 个向量库、消息、工具、会话、模型事实</td><td>agent 循环自己写；默认不含 tokio，也不含内置 HTTP（要开 <code>reqwest</code>）</td></tr>
+        <tr><td>+ <code>rig-agent</code></td><td>Builder、hook 栈、可序列化的 <code>AgentRun</code>、记忆</td><td>抽象单位是「一次 run」，编排逻辑归你</td></tr>
+        <tr><td>+ <code>rig-ecs</code></td><td>实体化 agent / 回合 / 调用、单一 effect 通道、会话恢复</td><td>Bevy 精确锁 <code>=0.20.0</code>，你的应用要变成 Bevy App</td></tr>
+        <tr><td>+ <code>rig-harness</code> / plugins</td><td>完整的终端编码 agent</td><td>RIG_HOME、<code>settings.toml</code>、启动协议、终端视图</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>判断方法：如果你的产品需要在执行过程中看、拦、改，停在 ECS 这一层；如果只是「输入一段话，拿到一个结果」，停在 <code>rig-agent</code>，不要为了架构好看把 Bevy 引进依赖树。</p>
+</section>
+
+</div>

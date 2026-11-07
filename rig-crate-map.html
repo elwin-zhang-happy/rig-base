@@ -1,0 +1,562 @@
+  <title>Rig crate 图谱</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Serif+TC:wght@400&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f5f5f5;
+      --color-ink:    #2d3142;
+      --color-muted:  #4f5d75;
+      --color-accent: #bf4520;
+      --color-rule:   rgba(45,49,66,0.12);
+      --font-sans:  'Geist', 'PingFang SC', 'Noto Sans TC', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', 'Noto Serif', 'Noto Serif TC', 'Songti SC', serif;
+      --font-mono:  'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      padding-block: 3rem 4rem;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      -webkit-font-smoothing: antialiased;
+      color-scheme: light;
+    }
+    .frame { max-width: 1360px; margin: 0 auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.65rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 2.6vw + 0.8rem, 2.35rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .lede {
+      color: var(--color-muted);
+      font-size: 0.94rem;
+      line-height: 1.7;
+      max-width: 52rem;
+    }
+    section { margin-top: 3.5rem; }
+    h2 {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.5rem;
+    }
+    .section-note {
+      color: var(--color-muted);
+      font-size: 0.88rem;
+      line-height: 1.65;
+      max-width: 54rem;
+      margin-bottom: 1.25rem;
+    }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    .caption {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      line-height: 1.75;
+      color: var(--color-muted);
+      margin-top: 0.85rem;
+      max-width: 64rem;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 0.9fr;
+      gap: 1.25rem;
+      margin-top: 3.5rem;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--color-rule);
+      border-radius: 6px;
+      padding: 1.25rem;
+    }
+    .card .eyebrow { margin-bottom: 0.5rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .card-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .card-dot.coral { background: var(--color-accent); }
+    .card-dot.ink { background: var(--color-ink); }
+    .card-dot.muted { background: var(--color-muted); }
+    .card h3 { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; }
+    .card p { font-size: 0.84rem; line-height: 1.65; color: var(--color-muted); }
+    .card code {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--color-ink);
+      background: rgba(45,49,66,0.05);
+      padding: 0.05rem 0.25rem;
+      border-radius: 3px;
+    }
+    footer {
+      margin-top: 3.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-rule);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--color-muted);
+    }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+    @media (max-width: 900px) {
+      body { padding: 2rem 1rem 3rem; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+  <div class="frame">
+    <p class="eyebrow">Rig workspace · crate map</p>
+    <h1>Rig 的 crate 依赖与架构</h1>
+    <p class="lede">
+      一张依赖图回答「谁依赖谁」，两张架构图分别回答「库怎么把模型变成请求」和「编码 agent 怎么被启动起来」。
+      所有边都来自各 crate 的 <code>Cargo.toml</code> path 依赖，不是推测。
+    </p>
+
+    <!-- ===================== 1. DEPENDENCY ===================== -->
+    <section>
+      <p class="eyebrow">图 1 · dependency</p>
+      <h2>依赖图：一个地基，两套栈</h2>
+      <p class="section-note">
+        左边是库栈（provider、向量库、记忆、经典 agent 运行时），右边是编码 agent 栈（Bevy 内核加插件）。
+        两套栈几乎不互相依赖，只在 <strong>rig-core</strong>、<strong>rig-memory</strong>、<strong>rig-tools</strong> 这几块地基上汇合。
+      </p>
+      <div class="diagram-container">
+        <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dep-title dep-desc">
+          <title id="dep-title">Rig workspace 的 crate 依赖图</title>
+          <desc id="dep-desc">分层依赖图：rig facade 与 9 个插件 crate 位于顶层，经典 agent 栈与编码内核在其下，provider 与向量库和 rig-memory 位于第三层，25 个 crate 共同依赖的 rig-core 位于底层。</desc>
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+            <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+            <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+          </defs>
+
+          <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+          <text x="28" y="76" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">RANK 0</text>
+          <text x="28" y="212" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">RANK 1</text>
+          <text x="28" y="348" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">RANK 2</text>
+          <text x="28" y="484" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">RANK 3</text>
+
+          <!-- connectors -->
+          <line x1="300" y1="136" x2="300" y2="216" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="980" y1="136" x2="980" y2="216" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <rect x="986" y="171" width="54" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="1013" y="180" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BUILDS ON</text>
+
+          <!-- facade -> core: left margin channel -->
+          <path d="M 200,108 H 108 Q 100,108 100,116 V 504 Q 100,512 108,512 H 560" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <!-- agent -> core -->
+          <path d="M 200,244 H 168 Q 160,244 160,252 V 462 Q 160,470 168,470 H 572 Q 580,470 580,478 V 488" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <!-- providers -> core -->
+          <path d="M 300,408 V 442 Q 300,450 308,450 H 612 Q 620,450 620,458 V 488" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <!-- memory -> core -->
+          <path d="M 980,408 V 448 Q 980,456 972,456 H 708 Q 700,456 700,464 V 488" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <!-- kernel -> core: right margin channel -->
+          <path d="M 1080,244 H 1132 Q 1140,244 1140,252 V 492 Q 1140,500 1132,500 H 760" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+          <!-- facade -> providers -->
+          <path d="M 400,108 H 472 Q 480,108 480,116 V 372 Q 480,380 472,380 H 400" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+          <!-- facade -->
+          <rect x="200" y="80" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="200" y="80" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="208" y="86" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="222" y="95" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LIB</text>
+          <rect x="356" y="88" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="374" y="97" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">0 IN</text>
+          <text x="300" y="114" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig facade</text>
+          <text x="300" y="130" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">re-exports · feature gated</text>
+
+          <!-- plugins -->
+          <rect x="880" y="80" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="880" y="80" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="888" y="86" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="902" y="95" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
+          <rect x="1036" y="88" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="1054" y="97" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">0 IN</text>
+          <text x="980" y="114" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">plugins/* ×9</text>
+          <text x="980" y="130" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">basics · tui · acp · mcp …</text>
+
+          <!-- agent stack -->
+          <rect x="200" y="216" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="200" y="216" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="208" y="222" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="222" y="231" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RT</text>
+          <rect x="356" y="224" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="374" y="233" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">2 IN</text>
+          <text x="300" y="250" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">agent 栈</text>
+          <text x="300" y="266" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">rig-agent · rig-cassette</text>
+
+          <!-- kernel -->
+          <rect x="880" y="216" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="880" y="216" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="888" y="222" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="902" y="231" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">KNL</text>
+          <rect x="1036" y="224" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="1054" y="233" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">9 IN</text>
+          <text x="980" y="250" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">编码内核</text>
+          <text x="980" y="266" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">rig-ecs · harness · tools</text>
+
+          <!-- providers -->
+          <rect x="200" y="352" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="200" y="352" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="208" y="358" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="222" y="367" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+          <rect x="356" y="360" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="374" y="369" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">1 IN</text>
+          <text x="300" y="386" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">provider + 向量库</text>
+          <text x="300" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">×18 · bedrock · qdrant …</text>
+
+          <!-- memory -->
+          <rect x="880" y="352" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="880" y="352" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="888" y="358" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="902" y="367" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MEM</text>
+          <rect x="1036" y="360" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="1054" y="369" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">6 IN</text>
+          <text x="980" y="386" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-memory</text>
+          <text x="980" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">sessions · compaction</text>
+
+          <!-- core (focal) -->
+          <rect x="560" y="488" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="560" y="488" width="200" height="56" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+          <rect x="568" y="494" width="28" height="12" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="582" y="503" fill="#bf4520" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+          <rect x="716" y="496" width="36" height="12" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="734" y="505" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">25 IN</text>
+          <text x="660" y="522" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-core</text>
+          <text x="660" y="538" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">wire · driver · contracts</text>
+
+          <!-- legend -->
+          <line x1="40" y1="640" x2="1240" y2="640" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+          <text x="40" y="661" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+          <rect x="128" y="651" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="152" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">internal crate</text>
+          <rect x="248" y="651" width="16" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1"/>
+          <text x="272" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">highest fan-in</text>
+          <text x="368" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">N IN = dependents</text>
+          <text x="504" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">×N = aggregate of N crates</text>
+        </svg>
+      </div>
+      <p class="caption">
+        聚合说明：<code>plugins/* ×9</code> 是 rig-basics、rig-tui、rig-acp、rig-mcp-client、rig-steel、rig-inspect、rig-traffic、rig-claude-cloak 与 corpus 之外的 9 个插件 crate；
+        <code>编码内核</code> 合并 rig-ecs、rig-harness、rig-tools；<code>provider + 向量库 ×18</code> 合并 6 个自有 SDK provider（bedrock、vertexai、gemini-grpc、candle、fastembed、typesafeai）与 12 个向量库 crate。
+        dev-dependencies 与部分 feature 门控的边从略；rig-core 的 25 个依赖方是逐 crate 数出来的实数。
+      </p>
+    </section>
+
+    <!-- ===================== 2. LIBRARY ARCHITECTURE ===================== -->
+    <section>
+      <p class="eyebrow">图 2 · library architecture</p>
+      <h2>库架构：一次调用怎么走到网络上</h2>
+      <p class="section-note">
+        rig-core 把「模型」拆成三段：<strong>配置</strong>构造 <strong>wire</strong>（某个 API 方言的请求与响应编解码），<strong>Model</strong> 再把 wire 绑定到 <strong>driver::Transport</strong>（真正发请求的东西）。
+        rig-http 只定义契约，rig-reqwest 与 rig-tungstenite 是自带实现。
+      </p>
+      <div class="diagram-container">
+        <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="lib-title lib-desc">
+          <title id="lib-title">rig-core 的请求链路架构</title>
+          <desc id="lib-desc">架构图：应用经 rig-agent 构造 rig-core 中的配置、wire 与 driver::Transport，再经 rig-http 契约到达 reqwest 或 tungstenite 实现和远端 API；配套 crate 实现 rig-core 的契约。</desc>
+          <defs>
+            <marker id="arrow2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+            <marker id="arrow2-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+            <marker id="arrow2-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+          </defs>
+
+          <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+          <!-- zone -->
+          <rect x="400" y="160" width="680" height="132" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+          <rect x="412" y="164" width="76" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="450" y="173" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">RIG-CORE</text>
+
+          <!-- connectors -->
+          <path d="M 240,120 V 140 Q 240,148 248,148 H 522 Q 530,148 530,156 V 196" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow2)"/>
+          <rect x="360" y="130" width="56" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="388" y="139" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BUILDS</text>
+
+          <line x1="340" y1="224" x2="440" y2="224" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow2)"/>
+          <rect x="356" y="206" width="68" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="390" y="215" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">IMPLEMENTS</text>
+
+          <line x1="620" y1="224" x2="660" y2="224" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow2)"/>
+          <line x1="840" y1="224" x2="880" y2="224" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow2)"/>
+
+          <path d="M 970,252 V 292 Q 970,300 962,300 H 668 Q 660,300 660,308 V 340" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow2)"/>
+          <rect x="796" y="282" width="44" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="818" y="291" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SENDS</text>
+
+          <line x1="660" y1="396" x2="660" y2="440" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow2)"/>
+          <line x1="660" y1="496" x2="660" y2="540" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow2-link)"/>
+          <rect x="668" y="510" width="48" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="692" y="519" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTPS</text>
+
+          <!-- app -->
+          <rect x="100" y="64" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="100" y="64" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="108" y="70" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="122" y="79" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
+          <text x="200" y="98" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">你的应用</text>
+          <text x="200" y="114" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">rig-agent · tools</text>
+
+          <!-- companions -->
+          <rect x="100" y="196" width="240" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="100" y="196" width="240" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="108" y="202" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="122" y="211" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+          <text x="220" y="230" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">配套 crate ×18</text>
+          <text x="220" y="246" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">6 providers · 12 stores</text>
+
+          <!-- config -->
+          <rect x="440" y="196" width="180" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="440" y="196" width="180" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="448" y="202" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="462" y="211" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">API</text>
+          <text x="530" y="230" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">配置 Model</text>
+          <text x="530" y="246" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">client.model()</text>
+
+          <!-- wire -->
+          <rect x="660" y="196" width="180" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="660" y="196" width="180" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="668" y="202" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="682" y="211" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">WIRE</text>
+          <text x="750" y="230" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">wire</text>
+          <text x="750" y="246" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">openai-chat · anthropic</text>
+
+          <!-- driver (focal) -->
+          <rect x="880" y="196" width="180" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="880" y="196" width="180" height="56" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+          <rect x="888" y="202" width="28" height="12" rx="2" fill="transparent" stroke="rgba(191,69,32,0.40)" stroke-width="0.8"/>
+          <text x="902" y="211" fill="#bf4520" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">DRV</text>
+          <text x="970" y="230" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">driver::Transport</text>
+          <text x="970" y="246" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">send · stream</text>
+
+          <!-- http contract -->
+          <rect x="560" y="340" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="560" y="340" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="568" y="346" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="582" y="355" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">IFC</text>
+          <text x="660" y="374" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-http</text>
+          <text x="660" y="390" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">HttpClientExt · WsClientExt</text>
+
+          <!-- transport impl -->
+          <rect x="560" y="440" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="560" y="440" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="568" y="446" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="582" y="455" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">IMPL</text>
+          <text x="660" y="474" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">reqwest / tungstenite</text>
+          <text x="660" y="490" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">bundled · rustls / native-tls</text>
+
+          <!-- remote API (external) -->
+          <rect x="560" y="540" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="560" y="540" width="200" height="56" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+          <rect x="568" y="546" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="582" y="555" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">NET</text>
+          <text x="660" y="574" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">远端 API</text>
+          <text x="660" y="590" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">OpenAI · Anthropic · Gemini</text>
+
+          <!-- legend -->
+          <line x1="40" y1="640" x2="1240" y2="640" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+          <text x="40" y="661" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+          <rect x="128" y="651" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="152" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">crate / module</text>
+          <rect x="272" y="651" width="16" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1"/>
+          <text x="296" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">seam: wire meets transport</text>
+          <rect x="472" y="651" width="16" height="10" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+          <text x="496" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">external service</text>
+        </svg>
+      </div>
+      <p class="caption">
+        rig-core 里 provider 专属的 wire 直接住在 <code>src/providers/</code>（openai、anthropic、gemini、ollama、deepseek 等），
+        因为它们只是既有方言的变体，必须复用共享的 generic completion model；需要自有 SDK 的 provider 才拆成独立 crate。
+        rig-derive 的两个 derive（<code>Embed</code>、<code>ContextValue</code>）与 12 个向量库对 <code>VectorStoreIndex</code> 的实现从略。
+      </p>
+    </section>
+
+    <!-- ===================== 3. AGENT ARCHITECTURE ===================== -->
+    <section>
+      <p class="eyebrow">图 3 · agent architecture</p>
+      <h2>编码 agent：启动链与运行时</h2>
+      <p class="section-note">
+        <code>rig</code> 二进制本身几乎不做事：它读 settings，生成一个 Cargo 工程，把 settings 打开的插件编译进去，然后运行那个进程。
+        真正的 agent 是 Bevy app：<strong>rig-harness</strong> 提供 session 与服务，<strong>rig-ecs</strong> 提供内核，其余全是插件。
+      </p>
+      <div class="diagram-container">
+        <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="agent-title agent-desc">
+          <title id="agent-title">rig 编码 agent 的启动链与运行时</title>
+          <desc id="agent-desc">架构图：rig-cli 读取 settings.toml，生成并构建含 9 个插件的 Cargo 工程，运行时由 rig-harness 与 rig-ecs 组成，向 session 存储追加记录并调用模型，退出码 75 触发重新构建与重启。</desc>
+          <defs>
+            <marker id="arrow3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+            <marker id="arrow3-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+            <marker id="arrow3-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+          </defs>
+
+          <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+          <!-- connectors -->
+          <line x1="380" y1="92" x2="540" y2="92" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <rect x="436" y="72" width="48" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="460" y="81" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">READS</text>
+
+          <path d="M 280,120 V 140 Q 280,148 288,148 H 632 Q 640,148 640,156 V 176" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <rect x="434" y="130" width="68" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="468" y="139" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">GENERATES</text>
+
+          <line x1="640" y1="232" x2="640" y2="288" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <rect x="648" y="252" width="36" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="666" y="261" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RUNS</text>
+
+          <line x1="380" y1="316" x2="540" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <rect x="434" y="298" width="52" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="460" y="307" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PLUGIN</text>
+
+          <line x1="640" y1="344" x2="640" y2="400" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <line x1="640" y1="456" x2="640" y2="512" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+
+          <path d="M 560,456 V 482 Q 560,490 552,490 H 248 Q 240,490 240,498 V 512" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <rect x="378" y="470" width="52" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="404" y="479" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">APPEND</text>
+
+          <path d="M 720,456 V 482 Q 720,490 728,490 H 972 Q 980,490 980,498 V 512" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow3)"/>
+          <rect x="826" y="470" width="36" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="844" y="479" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CALL</text>
+
+          <!-- reload back-edge -->
+          <path d="M 480,204 H 108 Q 100,204 100,196 V 100 Q 100,92 108,92 H 180" fill="none" stroke="#bf4520" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow3-accent)"/>
+          <rect x="108" y="155" width="66" height="12" rx="2" fill="#f5f5f5"/>
+          <text x="141" y="164" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RELOAD · 75</text>
+
+          <!-- cli -->
+          <rect x="180" y="64" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="180" y="64" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="188" y="70" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="202" y="79" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">BIN</text>
+          <text x="280" y="98" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-cli</text>
+          <text x="280" y="114" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">launcher · build · run</text>
+
+          <!-- settings -->
+          <rect x="540" y="64" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="540" y="64" width="200" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+          <rect x="548" y="70" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="562" y="79" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CFG</text>
+          <text x="640" y="98" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">settings.toml</text>
+          <text x="640" y="114" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">$RIG_HOME · plugins</text>
+
+          <!-- generated plugins -->
+          <rect x="480" y="176" width="320" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="480" y="176" width="320" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="488" y="182" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="502" y="191" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">GEN</text>
+          <text x="640" y="210" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">生成的 Cargo 工程 · plugins/*</text>
+          <text x="640" y="226" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">basics · tui · mcp-client · steel …</text>
+
+          <!-- frontends -->
+          <rect x="180" y="288" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="180" y="288" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="188" y="294" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="202" y="303" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">UI</text>
+          <text x="280" y="322" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">前端插件</text>
+          <text x="280" y="338" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">tui · acp · print --json</text>
+
+          <!-- harness -->
+          <rect x="540" y="288" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="540" y="288" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="548" y="294" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="562" y="303" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HST</text>
+          <text x="640" y="322" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-harness</text>
+          <text x="640" y="338" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">session · launcher protocol</text>
+
+          <!-- ecs -->
+          <rect x="540" y="400" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="540" y="400" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="548" y="406" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="562" y="415" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ECN</text>
+          <text x="640" y="434" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-ecs 内核</text>
+          <text x="640" y="450" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">entities · effects · bevy</text>
+
+          <!-- session store -->
+          <rect x="120" y="512" width="240" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="120" y="512" width="240" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+          <rect x="128" y="518" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="142" y="527" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ST</text>
+          <text x="240" y="546" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">SessionStore</text>
+          <text x="240" y="562" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">rig-memory · any Store</text>
+
+          <!-- core -->
+          <rect x="540" y="512" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="540" y="512" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="548" y="518" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="562" y="527" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LIB</text>
+          <text x="640" y="546" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">rig-core</text>
+          <text x="640" y="562" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">completion · tools · contracts</text>
+
+          <!-- models -->
+          <rect x="880" y="512" width="200" height="56" rx="6" fill="#f5f5f5"/>
+          <rect x="880" y="512" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <rect x="888" y="518" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+          <text x="902" y="527" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MDL</text>
+          <text x="980" y="546" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', sans-serif" text-anchor="middle">模型 + 工具</text>
+          <text x="980" y="562" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">provider · rig-tools</text>
+
+          <!-- legend -->
+          <line x1="40" y1="640" x2="1240" y2="640" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+          <text x="40" y="661" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+          <rect x="128" y="651" width="16" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+          <text x="152" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">component</text>
+          <rect x="216" y="651" width="16" height="10" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+          <text x="240" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">stored data</text>
+          <line x1="316" y1="656" x2="344" y2="656" stroke="#bf4520" stroke-width="1.2" stroke-dasharray="5,4"/>
+          <text x="352" y="660" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">reload loop</text>
+        </svg>
+      </div>
+      <p class="caption">
+        settings.toml 同时被 launcher 和 rig-harness 读取（后者的边从略）；生成的是普通 Cargo 工程，所以插件可以任意增删而不改二进制代码。
+        退出码 75 由 <code>rig-harness-protocol</code> 定义，表示「请用新构建重启我」；启动即崩的构建会被回滚到上一个可用版本。
+      </p>
+    </section>
+
+    <!-- ===================== CARDS ===================== -->
+    <div class="cards">
+      <div class="card">
+        <p class="eyebrow">structure</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>两套栈，一个地基</h3></div>
+        <p>
+          库栈（providers、向量库、agent 运行时）和编码 agent 栈（Bevy 内核 + 插件）几乎不互相依赖。
+          它们的公共点只有 <code>rig-core</code>、<code>rig-memory</code>、<code>rig-tools</code>：
+          换句话说，砍掉整个编码 agent 也不影响库里任何东西。
+        </p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">extension</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>扩展靠 feature 门控</h3></div>
+        <p>
+          根 crate <code>rig</code> 是一层 re-export：<code>rig-core</code> 原样重导出，每个配套 crate 是一个同名 feature 的模块。
+          不想带上依赖时直接依赖 <code>rig-core</code>，这就是为什么 provider 与向量库都拆成了独立 crate。
+        </p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">agent</p>
+        <div class="card-header"><span class="card-dot muted"></span><h3>agent 本身就是插件</h3></div>
+        <p>
+          终端界面、<code>--print</code>、内置工具、reload 都是 <code>plugins/rig-*</code>，只使用 <code>rig-harness</code> 的公共 API。
+          corpus 里的几十个插件语料就是用这个边界反向验证内核设计的。
+        </p>
+      </div>
+    </div>
+
+    <footer>
+      依据 crates/*、plugins/*、corpus/* 的 Cargo.toml path 依赖整理 · 2026-11-05 · rig 0.46
+    </footer>
+  </div>

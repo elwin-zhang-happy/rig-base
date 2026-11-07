@@ -30,6 +30,13 @@ const SILENT_START: Duration = Duration::from_secs(1);
 /// The most output kept since the last send.
 const MAX_SINCE: usize = 1 << 20;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const TIOCSCTTY: libc::c_ulong = libc::TIOCSCTTY;
+/// macOS and the other BSDs declare `TIOCSCTTY` narrower than `ioctl`
+/// takes its request.
+#[cfg(not(any(target_os = "linux", target_os = "android")))]
+const TIOCSCTTY: libc::c_ulong = libc::TIOCSCTTY as libc::c_ulong;
+
 /// What a terminal's threads share with the app and the tool calls.
 #[derive(Default)]
 pub struct State {
@@ -107,7 +114,7 @@ impl Pty {
         // session's controlling terminal with an async-signal-safe ioctl.
         unsafe {
             sh.pre_exec(|| {
-                if libc::ioctl(0, libc::TIOCSCTTY, 0) == -1 {
+                if libc::ioctl(0, TIOCSCTTY, 0) == -1 {
                     Err(io::Error::last_os_error())
                 } else {
                     Ok(())
@@ -349,23 +356,42 @@ fn stat_field(pid: u32, index: usize) -> Option<i64> {
 /// Unlocks the pty `master` and names its slave.
 fn slave_of(master: &File) -> io::Result<String> {
     let fd = master.as_raw_fd();
-    let mut name = [0 as libc::c_char; 128];
-    // SAFETY: `grantpt` and `unlockpt` take an open pty master; `ptsname_r`
-    // writes a NUL-terminated name of at most `name.len()` bytes into it.
-    let failed = unsafe {
-        libc::grantpt(fd) != 0
-            || libc::unlockpt(fd) != 0
-            || libc::ptsname_r(fd, name.as_mut_ptr(), name.len()) != 0
-    };
-    if failed {
+    // SAFETY: `grantpt` and `unlockpt` take an open pty master.
+    if unsafe { libc::grantpt(fd) != 0 || libc::unlockpt(fd) != 0 } {
         return Err(io::Error::last_os_error());
     }
-    let bytes: Vec<u8> = name
-        .iter()
-        .take_while(|&&byte| byte != 0)
-        .map(|&byte| byte.to_ne_bytes().first().copied().unwrap_or_default())
-        .collect();
-    String::from_utf8(bytes).map_err(io::Error::other)
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    {
+        let mut name = [0 as libc::c_char; 128];
+        // SAFETY: `ptsname_r` writes a NUL-terminated name of at most
+        // `name.len()` bytes into it.
+        if unsafe { libc::ptsname_r(fd, name.as_mut_ptr(), name.len()) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let bytes: Vec<u8> = name
+            .iter()
+            .take_while(|&&byte| byte != 0)
+            .map(|&byte| byte.to_ne_bytes().first().copied().unwrap_or_default())
+            .collect();
+        String::from_utf8(bytes).map_err(io::Error::other)
+    }
+    // macOS and the other BSDs have no `ptsname_r`; `ptsname` returns the
+    // name from a static buffer that only one thread may use at a time.
+    #[cfg(not(any(target_os = "linux", target_os = "android")))]
+    {
+        // SAFETY: `ptsname` names the slave of an open pty master and
+        // returns a NUL-terminated string or null.
+        unsafe {
+            let slave = libc::ptsname(fd);
+            if slave.is_null() {
+                return Err(io::Error::last_os_error());
+            }
+            std::ffi::CStr::from_ptr(slave)
+                .to_str()
+                .map(str::to_owned)
+                .map_err(io::Error::other)
+        }
+    }
 }
 
 /// Tells the terminal, and the program on it, its size.

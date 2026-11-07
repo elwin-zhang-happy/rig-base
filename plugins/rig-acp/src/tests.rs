@@ -533,6 +533,7 @@ struct Driven {
     seen: Arc<Mutex<Seen>>,
     project: PathBuf,
     /// The router's process id.
+    #[cfg(target_os = "linux")]
     router: Option<u32>,
 }
 
@@ -678,6 +679,8 @@ fn text(content: &acp::ContentBlock) -> Option<String> {
 
 /// `rig acp` as a process, as the client sees it.
 struct Router {
+    /// Held for `kill_on_drop`; the id is read only by the Linux tests.
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     process: tokio::process::Child,
 }
 
@@ -720,6 +723,7 @@ impl Router {
         Some((Self { process }, input, output))
     }
 
+    #[cfg(target_os = "linux")]
     fn id(&self) -> Option<u32> {
         self.process.id()
     }
@@ -740,6 +744,7 @@ fn drive(
         .ok()?;
     runtime.block_on(async {
         let (router, input, output) = Router::start(place)?;
+        #[cfg(target_os = "linux")]
         let pid = router.id();
         let seen = Arc::new(Mutex::new(Seen::default()));
         let (updates, permissions) = (seen.clone(), seen.clone());
@@ -818,6 +823,7 @@ fn drive(
                         cx,
                         seen,
                         project,
+                        #[cfg(target_os = "linux")]
                         router: pid,
                     };
                     test(&driven).await;
